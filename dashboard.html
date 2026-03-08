@@ -60,6 +60,38 @@
       margin-top: 6px;
     }
 
+    /* Nav Buttons */
+    .nav-buttons {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .nav-btn {
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      border: 2px solid #1F4E79;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.3px;
+    }
+    .nav-btn.active {
+      background: #1F4E79;
+      color: white;
+    }
+    .nav-btn.inactive {
+      background: white;
+      color: #1F4E79;
+    }
+    .nav-btn.disabled {
+      background: #f3f4f6;
+      color: #9ca3af;
+      border-color: #e5e7eb;
+      cursor: not-allowed;
+    }
+
     /* Charts */
     .chart-grid {
       display: grid;
@@ -135,7 +167,7 @@
     <h1>BMH Solutions LLC — Business Dashboard</h1>
     <p>MC: 1700226 &nbsp;·&nbsp; DOT: 04349026 &nbsp;·&nbsp; Hotshot Trucking</p>
   </div>
-  <div class="updated">Last updated<br>03/08/2026 07:43 PM</div>
+  <div class="updated">Last updated<br>03/08/2026 07:57 PM</div>
 </div>
 
 <div class="container">
@@ -167,6 +199,13 @@
       <div class="value">25</div>
       <div class="sub">processed loads</div>
     </div>
+  </div>
+
+  <!-- Nav Buttons -->
+  <div class="nav-buttons">
+    <a href="dashboard.html" class="nav-btn active">&#128200; Dashboard</a>
+    <a href="planning.html" class="nav-btn inactive">&#128197; Planning</a>
+    <span class="nav-btn disabled">&#9881;&#65039; Coming Soon</span>
   </div>
 
   <!-- Open Invoices Table -->
