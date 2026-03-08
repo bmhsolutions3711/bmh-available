@@ -134,7 +134,7 @@
     <h1>BMH Solutions LLC — Business Dashboard</h1>
     <p>MC: 1700226 &nbsp;·&nbsp; DOT: 04349026 &nbsp;·&nbsp; Hotshot Trucking</p>
   </div>
-  <div class="updated">Last updated<br>03/07/2026 09:03 PM</div>
+  <div class="updated">Last updated<br>03/08/2026 08:51 AM</div>
 </div>
 
 <div class="container">
@@ -155,6 +155,16 @@
       <div class="label">Avg Rate / Load</div>
       <div class="value">$909</div>
       <div class="sub">all time average</div>
+    </div>
+    <div class="kpi">
+      <div class="label">YTD Expenses</div>
+      <div class="value" style="color:#dc2626">$31,004</div>
+      <div class="sub">2026 year to date</div>
+    </div>
+    <div class="kpi">
+      <div class="label">YTD Net Profit</div>
+      <div class="value" style="color:#dc2626">$-8,279</div>
+      <div class="sub">revenue minus expenses</div>
     </div>
     <div class="kpi">
       <div class="label">Open Invoices</div>
@@ -184,6 +194,22 @@
     <h2>Load Count by Month (2026)</h2>
     <div class="chart-wrap">
       <canvas id="loadChart"></canvas>
+    </div>
+  </div>
+
+  <!-- P&L Chart + Expense Breakdown -->
+  <div class="chart-grid" style="margin-bottom:24px">
+    <div class="card">
+      <h2>Revenue vs Expenses vs Net (2026)</h2>
+      <div class="chart-wrap">
+        <canvas id="plChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Top Expense Categories</h2>
+      <div class="chart-wrap">
+        <canvas id="expenseChart"></canvas>
+      </div>
     </div>
   </div>
 
@@ -360,6 +386,73 @@ new Chart(document.getElementById('loadChart'), {
         grid: { color: '#f3f4f6' }
       },
       x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// P&L by month
+new Chart(document.getElementById('plChart'), {
+  type: 'bar',
+  data: {
+    labels: ["Jan", "Feb", "Mar"],
+    datasets: [
+      {
+        label: 'Revenue',
+        data: [8900.0, 10575.0, 3250.0],
+        backgroundColor: NAVY,
+        borderRadius: 4,
+      },
+      {
+        label: 'Expenses',
+        data: [13277.769999999997, 14554.319999999998, 3171.7799999999997],
+        backgroundColor: '#ef4444',
+        borderRadius: 4,
+      },
+      {
+        label: 'Net Profit',
+        data: [-4377.769999999997, -3979.319999999998, 78.22000000000025],
+        backgroundColor: '#16a34a',
+        borderRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { labels: { font: { size: 10 } } } },
+    scales: {
+      y: {
+        ticks: { callback: v => '$' + v.toLocaleString(), font: { size: 10 } },
+        grid: { color: '#f3f4f6' }
+      },
+      x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+// Expense breakdown
+new Chart(document.getElementById('expenseChart'), {
+  type: 'bar',
+  data: {
+    labels: ["Gas", "Office Supplies", "Lodging", "Truck Loan", "Rent", "SBA Loan Repayment"],
+    datasets: [{
+      label: 'Amount ($)',
+      data: [5357.439999999998, 3387.71, 2879.2399999999993, 2879.1, 2383.3500000000004, 2009.9900000000002],
+      backgroundColor: ['#ef4444','#f97316','#f59e0b','#84cc16','#06b6d4','#8b5cf6'],
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        ticks: { callback: v => '$' + v.toLocaleString(), font: { size: 10 } },
+        grid: { color: '#f3f4f6' }
+      },
+      y: { grid: { display: false }, ticks: { font: { size: 10 } } }
     }
   }
 });
