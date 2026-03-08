@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BMH Solutions — Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      color: #111827;
+    }
+    .header {
+      background: #1F4E79;
+      color: white;
+      padding: 20px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 20px; font-weight: 700; }
+    .header p  { font-size: 12px; opacity: 0.7; margin-top: 3px; }
+    .header .updated { font-size: 11px; opacity: 0.6; text-align: right; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px 20px; }
+
+    /* KPI Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .kpi {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+      border-left: 4px solid #1F4E79;
+    }
+    .kpi .label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+    .kpi .value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1F4E79;
+      line-height: 1;
+    }
+    .kpi .sub {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+
+    /* Charts */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 768px) {
+      .chart-grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+    }
+    .card h2 {
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+    .chart-wrap { position: relative; height: 240px; }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th {
+      background: #1F4E79;
+      color: white;
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #f3f4f6;
+      color: #374151;
+    }
+    tr:hover td { background: #f9fafb; }
+    tr:last-child td { border-bottom: none; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .badge-open { background: #fef3c7; color: #92400e; }
+
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: #9ca3af;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>BMH Solutions LLC — Business Dashboard</h1>
+    <p>MC: 1700226 &nbsp;·&nbsp; DOT: 04349026 &nbsp;·&nbsp; Hotshot Trucking</p>
+  </div>
+  <div class="updated">Last updated<br>03/07/2026 08:24 PM</div>
+</div>
+
+<div class="container">
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="label">YTD Revenue</div>
+      <div class="value">$22,725</div>
+      <div class="sub">2026 year to date</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Loads This Year</div>
+      <div class="value">25</div>
+      <div class="sub">processed loads</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Avg Rate / Load</div>
+      <div class="value">$909</div>
+      <div class="sub">all time average</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Open Invoices</div>
+      <div class="value" style="color:#16a34a">0</div>
+      <div class="sub">missing invoice number</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="chart-grid">
+    <div class="card">
+      <h2>Revenue by Month (2026)</h2>
+      <div class="chart-wrap">
+        <canvas id="revenueChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Top Brokers by Revenue</h2>
+      <div class="chart-wrap">
+        <canvas id="brokerChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Count Chart -->
+  <div class="card" style="margin-bottom:24px">
+    <h2>Load Count by Month (2026)</h2>
+    <div class="chart-wrap">
+      <canvas id="loadChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Open Invoices Table -->
+  <div class="card" style="margin-bottom:24px">
+    <h2>Open Invoices <span class="badge badge-open">0 pending</span></h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Load #</th>
+            <th>Broker</th>
+            <th>Route</th>
+            <th>Pickup</th>
+            <th>Delivery</th>
+            <th>Rate</th>
+            <th>Folder</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="7" style="text-align:center;color:#6b7280;padding:20px">All invoices accounted for</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  BMH Solutions LLC &nbsp;·&nbsp; PO Box 563, Green, OH 44232 &nbsp;·&nbsp; 614.704.3088 &nbsp;·&nbsp; bmhsolutions3711@gmail.com
+</div>
+
+<script>
+const NAVY  = '#1F4E79';
+const LIGHT = '#D6E4F0';
+const GOLD  = '#f59e0b';
+
+// Revenue by month
+new Chart(document.getElementById('revenueChart'), {
+  type: 'bar',
+  data: {
+    labels: ["Mar"],
+    datasets: [{
+      label: 'Revenue ($)',
+      data: [22725.0],
+      backgroundColor: NAVY,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: {
+        ticks: {
+          callback: v => '$' + v.toLocaleString(),
+          font: { size: 11 }
+        },
+        grid: { color: '#f3f4f6' }
+      },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// Top brokers
+new Chart(document.getElementById('brokerChart'), {
+  type: 'bar',
+  data: {
+    labels: ["Fifth Wheel Freight, LLC", "Freight Advisors Logistics Corporation", "NWL (Nationwide Logistics)", "Capital Logistics, LLC", "JDN Logistics LLC"],
+    datasets: [{
+      label: 'Revenue ($)',
+      data: [3300.0, 2250.0, 1700.0, 1400.0, 1100.0],
+      backgroundColor: [NAVY, '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd'],
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        ticks: {
+          callback: v => '$' + v.toLocaleString(),
+          font: { size: 10 }
+        },
+        grid: { color: '#f3f4f6' }
+      },
+      y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+// Load count
+new Chart(document.getElementById('loadChart'), {
+  type: 'line',
+  data: {
+    labels: ["Mar"],
+    datasets: [{
+      label: 'Loads',
+      data: [25],
+      borderColor: NAVY,
+      backgroundColor: LIGHT,
+      fill: true,
+      tension: 0.4,
+      pointBackgroundColor: NAVY,
+      pointRadius: 5,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: {
+        ticks: { stepSize: 1, font: { size: 11 } },
+        grid: { color: '#f3f4f6' }
+      },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+</script>
+
+</body>
+</html>
