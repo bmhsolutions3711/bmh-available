@@ -40,11 +40,11 @@
 
     /* Calendar */
     .cal-wrap{overflow-x:auto;margin-top:8px}
-    table.cal{border-collapse:separate;border-spacing:2px;width:100%}
-    .month-label{font-size:11px;font-weight:600;color:#6b7280;padding:2px 8px 2px 0;white-space:nowrap}
+    table.cal{border-collapse:separate;border-spacing:2px 6px;width:100%}
+    .month-label{font-size:11px;font-weight:700;color:#6b7280;padding:4px 10px 4px 0;white-space:nowrap;vertical-align:middle}
     .wh{min-width:22px;width:22px;font-size:9px;font-weight:400;color:#9ca3af;text-align:center;padding:2px}
-    .cal-empty{min-width:22px;width:22px;height:40px;background:#e5e7eb;border-radius:3px;opacity:0.4}
-    .cal-cell{min-width:22px;width:22px;height:40px;text-align:center;font-size:10px;font-weight:700;border-radius:3px;cursor:pointer;vertical-align:middle;transition:opacity .1s;position:relative}
+    .cal-empty{min-width:22px;width:22px;height:44px;background:#e5e7eb;border-radius:3px;opacity:0.25}
+    .cal-cell{min-width:22px;width:22px;height:44px;text-align:center;font-size:10px;font-weight:700;border-radius:3px;cursor:pointer;vertical-align:middle;transition:opacity .1s;position:relative}
     .cal-cell:hover{opacity:.8}
     .legend{display:flex;gap:14px;margin-top:14px;flex-wrap:wrap}
     .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#6b7280}
@@ -154,8 +154,6 @@
       <div class="legend-item"><div class="legend-dot" style="background:#111827"></div> Past</div>
       <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div> Workout</div>
       <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Today</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#D6E4F0;border:1px solid #1F4E79"></div> Pickup</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#1F4E79"></div> Delivery / Both</div>
       <div class="legend-item"><span style="font-size:11px;font-weight:700">✓</span>&nbsp;Full Routine</div>
       <div class="legend-item"><span style="font-size:11px;font-weight:700">½</span>&nbsp;Partial</div>
       <div class="legend-item"><span style="font-size:11px;font-weight:700">✓+</span>&nbsp;Above &amp; Beyond</div>
@@ -278,13 +276,12 @@ function updateCellAppearance(dateStr) {
   const isToday  = dateStr === today;
   const isActive = dateStr === activeDate;
   const workout  = getWorkout(dateStr);
-  const load     = LOAD_DATES[dateStr] || {};
-  const hasPickup   = (load.pickup   || 0) > 0;
-  const hasDelivery = (load.delivery || 0) > 0;
   const indicator = routineIndicator(dateStr);
 
   let bg, txt, border = 'none';
-  const dayNum = new Date(dateStr + 'T12:00:00').getDate();
+  const dayNum  = new Date(dateStr + 'T12:00:00').getDate();
+  const dow     = new Date(dateStr + 'T12:00:00').getDay(); // 0=Sun, 6=Sat
+  const isWeekend = (dow === 0 || dow === 6);
 
   if (isToday) {
     bg  = '#f59e0b'; txt = 'white';
@@ -292,19 +289,10 @@ function updateCellAppearance(dateStr) {
     bg  = '#16a34a'; txt = 'white';
   } else if (isPast) {
     bg  = '#111827'; txt = '#6b7280';
+  } else if (isWeekend) {
+    bg  = '#b5a642'; txt = 'white';
   } else {
     bg  = 'white';   txt = '#374151';
-  }
-
-  // Load overlays (show as small dot/stripe via border)
-  if (hasPickup && hasDelivery) {
-    border = '3px solid #1F4E79';
-  } else if (hasDelivery) {
-    border = '3px solid #1F4E79';
-    if (!workout && !isPast && !isToday) bg = '#1F4E79', txt = 'white';
-  } else if (hasPickup) {
-    border = '3px solid #93c5fd';
-    if (!workout && !isPast && !isToday) bg = '#D6E4F0', txt = '#1F4E79';
   }
 
   if (isActive) border = '2px solid #f59e0b';
