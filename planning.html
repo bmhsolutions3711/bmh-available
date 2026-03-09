@@ -35,6 +35,8 @@
     .score-label{font-size:12px;color:#6b7280;margin-top:6px}
     .workout-btn{margin-top:16px;width:100%;padding:10px;border-radius:8px;border:2px solid #16a34a;background:white;color:#16a34a;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
     .workout-btn.active{background:#16a34a;color:white}
+    .above-btn{margin-top:10px;width:100%;padding:10px;border-radius:8px;border:2px solid #7c3aed;background:white;color:#7c3aed;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+    .above-btn.active{background:#7c3aed;color:white}
 
     /* Calendar */
     .cal-wrap{overflow-x:auto;margin-top:8px}
@@ -89,6 +91,7 @@
         </ul>
         <div class="score-bar"><div class="score-fill" id="score-fill" style="width:0%"></div></div>
         <div class="score-label" id="score-label">0 / 5 completed</div>
+        <button class="above-btn" id="above-btn" onclick="toggleAbove()">&#9711; Above &amp; Beyond</button>
       </div>
 
       <!-- Workout -->
@@ -178,6 +181,13 @@ function getRoutine(dateStr) {
 function setRoutine(dateStr, arr) {
   localStorage.setItem('routine-' + dateStr, JSON.stringify(arr));
 }
+function getAbove(dateStr) {
+  return localStorage.getItem('above-' + dateStr) === '1';
+}
+function setAbove(dateStr, val) {
+  if (val) localStorage.setItem('above-' + dateStr, '1');
+  else      localStorage.removeItem('above-' + dateStr);
+}
 function getWorkout(dateStr) {
   return localStorage.getItem('workout-' + dateStr) === '1';
 }
@@ -211,6 +221,10 @@ function loadRoutineUI() {
   const btn = document.getElementById('workout-btn');
   btn.textContent = wo ? '✓ Worked Out!' : '✗ No Workout';
   btn.className   = 'workout-btn' + (wo ? ' active' : '');
+  const ab = getAbove(activeDate);
+  const abtn = document.getElementById('above-btn');
+  abtn.textContent = ab ? '✓+ Above & Beyond!' : '+ Above & Beyond';
+  abtn.className   = 'above-btn' + (ab ? ' active' : '');
 }
 
 function saveRoutine() {
@@ -231,6 +245,12 @@ function updateScore() {
   document.getElementById('score-label').textContent = n + ' / ' + TOTAL_ITEMS + ' completed';
 }
 
+function toggleAbove() {
+  const cur = getAbove(activeDate);
+  setAbove(activeDate, !cur);
+  loadRoutineUI();
+  updateCellAppearance(activeDate);
+}
 function toggleWorkout() {
   const cur = getWorkout(activeDate);
   setWorkout(activeDate, !cur);
@@ -242,10 +262,11 @@ function toggleWorkout() {
 function routineIndicator(dateStr) {
   const checked = getRoutine(dateStr);
   const n = checked.length;
-  if (n === 0)           return '';
+  const above = getAbove(dateStr);
+  if (above)             return '✓+';
   if (n === TOTAL_ITEMS) return '✓';
-  if (n < TOTAL_ITEMS)   return '½';
-  return '✓+';
+  if (n > 0)             return '½';
+  return '';
 }
 
 function updateCellAppearance(dateStr) {
