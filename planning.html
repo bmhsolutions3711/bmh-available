@@ -45,7 +45,7 @@
     .month-label{font-size:9px;font-weight:700;color:#6b7280;padding:1px 5px 1px 0;white-space:nowrap;vertical-align:middle;width:24px}
     .wh{font-size:7px;font-weight:500;color:#9ca3af;text-align:center;padding:1px 0}
     .cal-empty{height:calc((100vh - 320px) / 12);background:#e5e7eb;border-radius:2px;opacity:0.25}
-    .cal-cell{height:calc((100vh - 320px) / 12);text-align:center;font-size:7px;font-weight:700;border-radius:2px;cursor:pointer;vertical-align:middle;transition:opacity .1s;position:relative;line-height:1}
+    .cal-cell{height:calc((100vh - 320px) / 12);text-align:left;font-size:7px;font-weight:600;border-radius:2px;cursor:pointer;vertical-align:top;transition:opacity .1s;position:relative;line-height:1;padding:2px 2px 0 2px}
     .cal-cell:hover{opacity:.8}
     .legend{display:flex;gap:14px;margin-top:14px;flex-wrap:wrap}
     .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#6b7280}
@@ -290,6 +290,25 @@ document.querySelectorAll('.cal-cell').forEach(cell => {
 });
 
 // ── Init ─────────────────────────────────────────────────────────────────────
+// Seed historical data if not already set
+(function seedData() {
+  const SEED = {
+    workout:  ['2026-01-05','2026-01-08','2026-01-22','2026-01-23','2026-01-25'],
+    above:    ['2026-01-11'],
+    half: [
+      '2026-01-01','2026-01-02','2026-01-03','2026-01-04',
+      '2026-01-06','2026-01-07','2026-01-09','2026-01-10',
+      '2026-01-12','2026-01-13','2026-01-14','2026-01-15',
+      '2026-01-16','2026-01-17','2026-01-18','2026-01-19',
+      '2026-01-20','2026-01-21','2026-01-24','2026-01-26',
+      '2026-01-27','2026-01-28','2026-01-29','2026-01-30','2026-01-31'
+    ]
+  };
+  SEED.workout.forEach(d => { if (!localStorage.getItem('workout-'+d)) localStorage.setItem('workout-'+d,'1'); });
+  SEED.above.forEach(d   => { if (!localStorage.getItem('above-'+d))   localStorage.setItem('above-'+d,'1'); });
+  // half = store 2 of 5 items checked so routineIndicator returns ½
+  SEED.half.forEach(d    => { if (!localStorage.getItem('routine-'+d))  localStorage.setItem('routine-'+d,'[0,1]'); });
+})();
 loadRoutineUI();
 updateCalendar();
 </script>
