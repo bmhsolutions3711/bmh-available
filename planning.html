@@ -262,16 +262,22 @@ function updateCellAppearance(dateStr) {
 
   if (isActive) border = '2px solid #f59e0b';
 
-  // If there's a routine indicator on a past/dark cell, force white text
   if (indicator && isPast && !workout) txt = 'white';
-  if (indicator) cell.style.fontSize = '9px';
-  else           cell.style.fontSize = '8px';
 
-  cell.style.background  = bg;
-  cell.style.color       = txt;
-  cell.style.outline     = border;
+  cell.style.background   = bg;
+  cell.style.color        = txt;
+  cell.style.outline      = border;
   cell.style.outlineOffset = '-2px';
-  cell.textContent       = indicator || dayNum;
+  cell.style.position     = 'relative';
+
+  if (indicator) {
+    cell.innerHTML =
+      `<span style="position:absolute;top:2px;left:2px;font-size:7px;font-weight:600;opacity:0.75;line-height:1">${dayNum}</span>` +
+      `<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">${indicator}</span>`;
+  } else {
+    cell.innerHTML =
+      `<span style="position:absolute;top:2px;left:2px;font-size:7px;font-weight:600;line-height:1">${dayNum}</span>`;
+  }
 }
 
 function updateCalendar() {
