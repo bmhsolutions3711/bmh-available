@@ -44,8 +44,8 @@
     table.cal{border-collapse:separate;border-spacing:1px 2px;width:100%;table-layout:fixed}
     .month-label{font-size:9px;font-weight:700;color:#6b7280;padding:1px 5px 1px 0;white-space:nowrap;vertical-align:middle;width:24px}
     .wh{font-size:7px;font-weight:500;color:#9ca3af;text-align:center;padding:1px 0}
-    .cal-empty{height:calc((100vh - 320px) / 12);background:#374151;border-radius:2px;opacity:0.6}
-    .cal-cell{height:calc((100vh - 320px) / 12);text-align:left;font-size:7px;font-weight:600;border-radius:2px;cursor:pointer;vertical-align:top;transition:opacity .1s;position:relative;line-height:1;padding:2px 2px 0 2px}
+    .cal-empty{height:calc((100vh - 200px) / 12);background:#374151;border-radius:2px;opacity:0.6}
+    .cal-cell{height:calc((100vh - 200px) / 12);text-align:left;font-size:7px;font-weight:600;border-radius:2px;cursor:pointer;vertical-align:top;transition:opacity .1s;position:relative;line-height:1;padding:2px 2px 0 2px}
     .cal-cell:hover{opacity:.8}
     .legend{display:flex;gap:14px;margin-top:14px;flex-wrap:wrap}
     .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#6b7280}
@@ -310,7 +310,7 @@ function updateCellAppearance(dateStr) {
   if (indicator) {
     cell.innerHTML =
       `<span style="position:absolute;top:2px;left:2px;font-size:7px;font-weight:600;opacity:0.75;line-height:1">${dayNum}</span>` +
-      `<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:${indicator==='½'?'9px':'13px'};font-weight:800">${indicator}</span>`;
+      `<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:${indicator==='½'?'9px':'20px'};font-weight:800">${indicator}</span>`;
   } else {
     cell.innerHTML =
       `<span style="position:absolute;top:2px;left:2px;font-size:7px;font-weight:600;line-height:1">${dayNum}</span>`;
