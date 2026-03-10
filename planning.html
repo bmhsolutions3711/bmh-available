@@ -118,7 +118,8 @@
     <div class="legend">
       <div class="legend-item"><div class="legend-dot" style="background:#111827"></div> Past</div>
       <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div> Workout</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Today</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#00cfff"></div> Today</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Fall Back Zone</div>
       <div class="legend-item"><span style="font-size:11px;font-weight:700">✓</span>&nbsp;Full Routine</div>
       <div class="legend-item"><span style="font-size:11px;font-weight:700">½</span>&nbsp;Partial</div>
       <div class="legend-item"><span style="font-size:11px;font-weight:700">✓+</span>&nbsp;Above &amp; Beyond</div>
@@ -285,19 +286,26 @@ function updateCellAppearance(dateStr) {
   const dow     = new Date(dateStr + 'T12:00:00').getDay(); // 0=Sun, 6=Sat
   const isWeekend = (dow === 0 || dow === 6);
 
+  // Fall-back warning window: Oct 25 – Nov 8 2026 (future only)
+  const FALLBACK_START = '2026-10-25';
+  const FALLBACK_END   = '2026-11-08';
+  const isFallbackZone = !isPast && !isToday && dateStr >= FALLBACK_START && dateStr <= FALLBACK_END;
+
   if (isToday) {
-    bg  = '#f59e0b'; txt = 'white';
+    bg  = '#00cfff'; txt = 'white';   // fluorescent blue
   } else if (workout) {
     bg  = '#16a34a'; txt = 'white';
   } else if (isPast) {
     bg  = '#111827'; txt = '#6b7280';
+  } else if (isFallbackZone) {
+    bg  = '#ef4444'; txt = 'white';   // red warning
   } else if (isWeekend) {
     bg  = '#b5a642'; txt = 'white';
   } else {
     bg  = 'white';   txt = '#374151';
   }
 
-  if (isActive) border = '2px solid #f59e0b';
+  if (isActive) border = '2px solid #00cfff';
 
   if (indicator && isPast && !workout) txt = 'white';
 
