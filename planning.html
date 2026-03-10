@@ -44,7 +44,7 @@
     table.cal{border-collapse:separate;border-spacing:1px 2px;width:100%;table-layout:fixed}
     .month-label{font-size:9px;font-weight:700;color:#6b7280;padding:1px 5px 1px 0;white-space:nowrap;vertical-align:middle;width:24px}
     .wh{font-size:7px;font-weight:500;color:#9ca3af;text-align:center;padding:1px 0}
-    .cal-empty{height:calc((100vh - 320px) / 12);background:#e5e7eb;border-radius:2px;opacity:0.25}
+    .cal-empty{height:calc((100vh - 320px) / 12);background:#374151;border-radius:2px;opacity:0.6}
     .cal-cell{height:calc((100vh - 320px) / 12);text-align:left;font-size:7px;font-weight:600;border-radius:2px;cursor:pointer;vertical-align:top;transition:opacity .1s;position:relative;line-height:1;padding:2px 2px 0 2px}
     .cal-cell:hover{opacity:.8}
     .legend{display:flex;gap:14px;margin-top:14px;flex-wrap:wrap}
@@ -132,31 +132,68 @@
 </div>
 
 <script>
-const TOTAL_ITEMS = 5;
-const LOAD_DATES  = {"2026-02-04": {"pickup": 1, "delivery": 0}, "2026-02-05": {"pickup": 0, "delivery": 2}, "2026-02-16": {"pickup": 1, "delivery": 1}, "2026-02-17": {"pickup": 1, "delivery": 1}, "2026-01-26": {"pickup": 1, "delivery": 2}, "2026-02-19": {"pickup": 1, "delivery": 1}, "2026-02-23": {"pickup": 0, "delivery": 1}, "2026-01-29": {"pickup": 1, "delivery": 1}, "2026-02-02": {"pickup": 0, "delivery": 2}, "2026-01-06": {"pickup": 1, "delivery": 0}, "2026-01-07": {"pickup": 0, "delivery": 1}, "2026-01-23": {"pickup": 1, "delivery": 1}, "2026-01-30": {"pickup": 1, "delivery": 0}, "2026-01-20": {"pickup": 1, "delivery": 0}, "2026-01-22": {"pickup": 1, "delivery": 1}, "2026-01-16": {"pickup": 1, "delivery": 1}, "2026-01-19": {"pickup": 0, "delivery": 1}, "2026-02-12": {"pickup": 1, "delivery": 1}, "2026-02-13": {"pickup": 1, "delivery": 1}, "2026-01-09": {"pickup": 1, "delivery": 0}, "2026-01-12": {"pickup": 1, "delivery": 1}, "2026-01-15": {"pickup": 1, "delivery": 0}, "2026-01-28": {"pickup": 1, "delivery": 0}, "2026-02-24": {"pickup": 1, "delivery": 0}, "2026-02-25": {"pickup": 0, "delivery": 1}, "2026-03-03": {"pickup": 1, "delivery": 0}, "2026-03-05": {"pickup": 0, "delivery": 1}, "2026-02-03": {"pickup": 1, "delivery": 0}, "2026-02-27": {"pickup": 1, "delivery": 1}, "2026-03-02": {"pickup": 0, "delivery": 1}, "2026-02-26": {"pickup": 1, "delivery": 0}, "2026-02-11": {"pickup": 1, "delivery": 0}, "2026-02-18": {"pickup": 1, "delivery": 0}, "2026-01-14": {"pickup": 0, "delivery": 1}};
-const TODAY       = '2026-03-09';
-let   activeDate  = TODAY;
+const TOTAL_ITEMS  = 5;
+const LOAD_DATES   = {"2026-02-04": {"pickup": 1, "delivery": 0}, "2026-02-05": {"pickup": 0, "delivery": 2}, "2026-02-16": {"pickup": 1, "delivery": 1}, "2026-02-17": {"pickup": 1, "delivery": 1}, "2026-01-26": {"pickup": 1, "delivery": 2}, "2026-02-19": {"pickup": 1, "delivery": 0}, "2026-02-23": {"pickup": 0, "delivery": 1}, "2026-01-29": {"pickup": 1, "delivery": 1}, "2026-02-02": {"pickup": 0, "delivery": 2}, "2026-01-06": {"pickup": 1, "delivery": 0}, "2026-01-07": {"pickup": 0, "delivery": 1}, "2026-01-23": {"pickup": 1, "delivery": 1}, "2026-01-30": {"pickup": 1, "delivery": 0}, "2026-01-20": {"pickup": 1, "delivery": 0}, "2026-01-22": {"pickup": 1, "delivery": 1}, "2026-01-16": {"pickup": 1, "delivery": 1}, "2026-01-19": {"pickup": 0, "delivery": 1}, "2026-02-12": {"pickup": 1, "delivery": 1}, "2026-02-13": {"pickup": 1, "delivery": 1}, "2026-01-09": {"pickup": 1, "delivery": 0}, "2026-01-12": {"pickup": 1, "delivery": 1}, "2026-01-15": {"pickup": 1, "delivery": 0}, "2026-01-28": {"pickup": 1, "delivery": 0}, "2026-02-24": {"pickup": 1, "delivery": 0}, "2026-02-25": {"pickup": 0, "delivery": 1}, "2026-03-03": {"pickup": 1, "delivery": 0}, "2026-03-05": {"pickup": 0, "delivery": 1}, "2026-02-03": {"pickup": 1, "delivery": 0}, "2026-02-27": {"pickup": 1, "delivery": 1}, "2026-03-02": {"pickup": 0, "delivery": 1}, "2026-02-26": {"pickup": 1, "delivery": 0}, "2026-02-11": {"pickup": 1, "delivery": 0}, "2026-01-14": {"pickup": 0, "delivery": 1}, "2026-03-09": {"pickup": 1, "delivery": 0}, "2026-03-10": {"pickup": 0, "delivery": 1}};
+const TODAY        = '2026-03-09';
+let   activeDate   = TODAY;
+
+// ── JSONBin cloud sync ───────────────────────────────────────────────────────
+const BIN_ID  = '69af7d2043b1c97be9c74547';
+const BIN_KEY = '$2a$10$ULYp1072ddh26aXQdI9V6.R1eRDeMnw8J.b5MrD3Bkfof1wpKzeRq';
+const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
+// In-memory store — loaded from JSONBin on init
+let DB = { routine: {}, workout: {}, above: {} };
+let saveTimer = null;
+
+async function loadFromCloud() {
+  try {
+    const r = await fetch(BIN_URL, { headers: { 'X-Master-Key': BIN_KEY } });
+    const j = await r.json();
+    if (j.record) {
+      DB.routine = j.record.routine || {};
+      DB.workout = j.record.workout || {};
+      DB.above   = j.record.above   || {};
+    }
+  } catch(e) { console.warn('JSONBin load failed', e); }
+}
+
+function saveToCloud() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try {
+      await fetch(BIN_URL, {
+        method: 'PUT',
+        headers: { 'X-Master-Key': BIN_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify(DB)
+      });
+    } catch(e) { console.warn('JSONBin save failed', e); }
+  }, 800);
+}
 
 // ── Storage helpers ──────────────────────────────────────────────────────────
 function getRoutine(dateStr) {
-  try { return JSON.parse(localStorage.getItem('routine-' + dateStr) || '[]'); } catch { return []; }
+  return DB.routine[dateStr] || [];
 }
 function setRoutine(dateStr, arr) {
-  localStorage.setItem('routine-' + dateStr, JSON.stringify(arr));
+  DB.routine[dateStr] = arr;
+  saveToCloud();
 }
 function getAbove(dateStr) {
-  return localStorage.getItem('above-' + dateStr) === '1';
+  return !!DB.above[dateStr];
 }
 function setAbove(dateStr, val) {
-  if (val) localStorage.setItem('above-' + dateStr, '1');
-  else      localStorage.removeItem('above-' + dateStr);
+  if (val) DB.above[dateStr] = 1;
+  else     delete DB.above[dateStr];
+  saveToCloud();
 }
 function getWorkout(dateStr) {
-  return localStorage.getItem('workout-' + dateStr) === '1';
+  return !!DB.workout[dateStr];
 }
 function setWorkout(dateStr, val) {
-  if (val) localStorage.setItem('workout-' + dateStr, '1');
-  else      localStorage.removeItem('workout-' + dateStr);
+  if (val) DB.workout[dateStr] = 1;
+  else     delete DB.workout[dateStr];
+  saveToCloud();
 }
 
 // ── Date helpers ─────────────────────────────────────────────────────────────
@@ -296,27 +333,38 @@ document.querySelectorAll('.cal-cell').forEach(cell => {
 });
 
 // ── Init ─────────────────────────────────────────────────────────────────────
-// Seed historical data if not already set
-(function seedData() {
-  const SEED = {
-    workout:  ['2026-01-05','2026-01-08','2026-01-22','2026-01-23','2026-01-25'],
-    above:    ['2026-01-11'],
-    half: [
+async function init() {
+  await loadFromCloud();
+
+  // Seed historical data only if cloud is empty
+  const isEmpty = Object.keys(DB.routine).length === 0 && Object.keys(DB.workout).length === 0;
+  if (isEmpty) {
+    const WORKOUT_DAYS = ['2026-01-05','2026-01-08','2026-01-22','2026-01-23','2026-01-25'];
+    const ABOVE_DAYS   = ['2026-01-11'];
+    const HALF_DAYS    = [
       '2026-01-01','2026-01-02','2026-01-03','2026-01-04',
-      '2026-01-06','2026-01-07','2026-01-09','2026-01-10',
-      '2026-01-12','2026-01-13','2026-01-14','2026-01-15',
+      '2026-01-05','2026-01-06','2026-01-07','2026-01-08','2026-01-09','2026-01-10',
+      '2026-01-11','2026-01-12','2026-01-13','2026-01-14','2026-01-15',
       '2026-01-16','2026-01-17','2026-01-18','2026-01-19',
-      '2026-01-20','2026-01-21','2026-01-24','2026-01-26',
-      '2026-01-27','2026-01-28','2026-01-29','2026-01-30','2026-01-31'
-    ]
-  };
-  SEED.workout.forEach(d => { if (!localStorage.getItem('workout-'+d)) localStorage.setItem('workout-'+d,'1'); });
-  SEED.above.forEach(d   => { if (!localStorage.getItem('above-'+d))   localStorage.setItem('above-'+d,'1'); });
-  // half = store 2 of 5 items checked so routineIndicator returns ½
-  SEED.half.forEach(d    => { if (!localStorage.getItem('routine-'+d))  localStorage.setItem('routine-'+d,'[0,1]'); });
-})();
-loadRoutineUI();
-updateCalendar();
+      '2026-01-20','2026-01-21','2026-01-22','2026-01-23','2026-01-24','2026-01-25','2026-01-26',
+      '2026-01-27','2026-01-28','2026-01-29','2026-01-30','2026-01-31',
+      '2026-02-01','2026-02-02','2026-02-03','2026-02-04','2026-02-05','2026-02-06','2026-02-07',
+      '2026-02-08','2026-02-09','2026-02-10','2026-02-11','2026-02-12','2026-02-13','2026-02-14',
+      '2026-02-15','2026-02-16','2026-02-17','2026-02-18','2026-02-19','2026-02-20','2026-02-21',
+      '2026-02-22','2026-02-23','2026-02-24','2026-02-25','2026-02-26','2026-02-27','2026-02-28',
+      '2026-03-01','2026-03-02','2026-03-03','2026-03-04','2026-03-05','2026-03-06','2026-03-07',
+      '2026-03-08'
+    ];
+    WORKOUT_DAYS.forEach(d => { DB.workout[d] = 1; });
+    ABOVE_DAYS.forEach(d   => { DB.above[d]   = 1; });
+    HALF_DAYS.forEach(d    => { DB.routine[d]  = [0,1]; });
+    saveToCloud();
+  }
+
+  loadRoutineUI();
+  updateCalendar();
+}
+init();
 </script>
 </body>
 </html>
