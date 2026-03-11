@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BMH Morning Briefing</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+    .header{background:#1F4E79;padding:20px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+    .header h1{font-size:20px;font-weight:700;color:white}
+    .header .date{font-size:13px;color:#93c5fd}
+    .play-btn{background:#00cfff;color:#0f172a;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s}
+    .play-btn:hover{background:#38d9f5}
+    .play-btn.playing{background:#ef4444;color:white}
+    .nav{background:#1e293b;padding:10px 32px;display:flex;gap:8px}
+    .nav a{color:#94a3b8;text-decoration:none;font-size:13px;font-weight:600;padding:6px 14px;border-radius:6px;transition:all .2s}
+    .nav a:hover,.nav a.active{background:#1F4E79;color:white}
+    .content{padding:24px 32px;max-width:1400px;margin:0 auto}
+    .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#64748b;margin:24px 0 12px}
+    /* Weather */
+    .weather-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:8px}
+    .hub-card{background:#1e293b;border-radius:12px;padding:16px;border:1px solid #334155}
+    .hub-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+    .hub-name{font-size:13px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+    .hub-city{font-size:16px;font-weight:700;color:white;margin-top:2px}
+    .current-weather{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .weather-icon{font-size:36px}
+    .weather-temp{font-size:32px;font-weight:700;color:white}
+    .weather-desc{font-size:13px;color:#94a3b8;text-transform:capitalize;margin-top:2px}
+    .weather-details{display:flex;gap:16px;font-size:12px;color:#64748b;margin-bottom:12px}
+    .forecast-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+    .forecast-day{flex:0 0 auto;background:#0f172a;border-radius:6px;padding:6px 8px;text-align:center;min-width:44px}
+    .forecast-day .fday{font-size:10px;color:#64748b;font-weight:600}
+    .forecast-day .ficon{font-size:18px;margin:2px 0}
+    .forecast-day .fhi{font-size:12px;font-weight:700;color:white}
+    .forecast-day .flo{font-size:11px;color:#64748b}
+    .loading{color:#64748b;font-size:13px;padding:20px 0}
+    /* Crypto */
+    .crypto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:8px}
+    .crypto-card{background:#1e293b;border-radius:12px;padding:16px;border:1px solid #334155}
+    .crypto-symbol{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px}
+    .crypto-price{font-size:24px;font-weight:700;color:white;margin:4px 0}
+    .crypto-change{font-size:13px;font-weight:600}
+    .crypto-change.up{color:#22c55e}
+    .crypto-change.down{color:#ef4444}
+    .news-list{display:flex;flex-direction:column;gap:8px}
+    .news-item{background:#1e293b;border-radius:8px;padding:12px 16px;border:1px solid #334155;font-size:13px;color:#94a3b8;line-height:1.5}
+    .news-item a{color:#38bdf8;text-decoration:none}
+    .news-item a:hover{text-decoration:underline}
+    .error{color:#ef4444;font-size:12px;padding:8px 0}
+    .spinner{display:inline-block;width:16px;height:16px;border:2px solid #334155;border-top-color:#00cfff;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>☀️ BMH Morning Briefing</h1>
+    <div class="date">Tuesday, March 10, 2026</div>
+  </div>
+  <button class="play-btn" id="play-btn" onclick="toggleBriefing()">▶ Play Briefing</button>
+</div>
+<div class="nav">
+  <a href="dashboard.html">Dashboard</a>
+  <a href="planning.html">Planning</a>
+  <a href="briefing.html" class="active">Morning Briefing</a>
+</div>
+<div class="content">
+
+  <div class="section-title">🌤 Regional Weather Hubs</div>
+  <div class="weather-grid" id="weather-grid">
+    <div class="loading"><span class="spinner"></span>Loading weather...</div>
+  </div>
+
+  <div class="section-title">💰 Crypto</div>
+  <div class="crypto-grid" id="crypto-grid">
+    <div class="loading"><span class="spinner"></span>Loading prices...</div>
+  </div>
+
+  <div class="section-title">📰 Crypto News</div>
+  <div class="news-list" id="news-list">
+    <div class="loading"><span class="spinner"></span>Loading news...</div>
+  </div>
+
+</div>
+
+<script>
+const OWM_KEY = '2100c08faa7729bbd1d620c0f8b7d104';
+const HUBS = [{"name": "Ohio Valley", "city": "North Canton", "state": "OH", "lat": 40.8759, "lon": -81.4026}, {"name": "Southeast", "city": "Atlanta", "state": "GA", "lat": 33.749, "lon": -84.388}, {"name": "Southwest", "city": "Phoenix", "state": "AZ", "lat": 33.4484, "lon": -112.074}, {"name": "Texas", "city": "Dallas", "state": "TX", "lat": 32.7767, "lon": -96.797}, {"name": "Plains", "city": "Saint Louis", "state": "MO", "lat": 38.627, "lon": -90.1994}, {"name": "Mountain", "city": "Denver", "state": "CO", "lat": 39.7392, "lon": -104.9903}, {"name": "Northwest", "city": "Boise", "state": "ID", "lat": 43.615, "lon": -116.2023}, {"name": "East Coast", "city": "Newark", "state": "NJ", "lat": 40.7357, "lon": -74.1724}];
+
+const WX_ICONS = {
+  'Clear': '☀️', 'Clouds': '☁️', 'Rain': '🌧️', 'Drizzle': '🌦️',
+  'Thunderstorm': '⛈️', 'Snow': '❄️', 'Mist': '🌫️', 'Fog': '🌫️',
+  'Haze': '🌫️', 'Smoke': '🌫️', 'Dust': '💨', 'Sand': '💨',
+  'Ash': '🌋', 'Squall': '💨', 'Tornado': '🌪️'
+};
+
+function wxIcon(main) { return WX_ICONS[main] || '🌡️'; }
+
+function fmtTemp(k) { return Math.round((k - 273.15) * 9/5 + 32) + '°'; }
+
+function dayAbbr(dt) {
+  return new Date(dt * 1000).toLocaleDateString('en-US', {weekday:'short'});
+}
+
+// ── Weather ──────────────────────────────────────────────────────────────────
+let weatherData = {};
+
+async function loadWeather() {
+  const grid = document.getElementById('weather-grid');
+  grid.innerHTML = '';
+
+  await Promise.all(HUBS.map(async hub => {
+    try {
+      const [cur, fore] = await Promise.all([
+        fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${hub.lat}&lon=${hub.lon}&appid=${OWM_KEY}`).then(r=>r.json()),
+        fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${hub.lat}&lon=${hub.lon}&appid=${OWM_KEY}`).then(r=>r.json())
+      ]);
+
+      const icon = wxIcon(cur.weather[0].main);
+      const temp = fmtTemp(cur.main.temp);
+      const feels = fmtTemp(cur.main.feels_like);
+      const desc = cur.weather[0].description;
+      const wind = Math.round(cur.wind.speed * 2.237) + ' mph';
+      const humid = cur.main.humidity + '%';
+
+      // Build 5-day forecast (noon readings)
+      const seen = new Set();
+      const days = [];
+      for (const item of fore.list) {
+        const d = dayAbbr(item.dt);
+        if (!seen.has(d) && days.length < 5) {
+          seen.add(d);
+          days.push({
+            day: d,
+            icon: wxIcon(item.weather[0].main),
+            hi: fmtTemp(item.main.temp_max),
+            lo: fmtTemp(item.main.temp_min)
+          });
+        }
+      }
+
+      weatherData[hub.name] = { temp, desc, wind, humid, icon, days };
+
+      const forecastHtml = days.map(d => `
+        <div class="forecast-day">
+          <div class="fday">${d.day}</div>
+          <div class="ficon">${d.icon}</div>
+          <div class="fhi">${d.hi}</div>
+          <div class="flo">${d.lo}</div>
+        </div>`).join('');
+
+      const card = document.createElement('div');
+      card.className = 'hub-card';
+      card.id = 'hub-' + hub.name.replace(/ /g,'-');
+      card.innerHTML = `
+        <div class="hub-header">
+          <div>
+            <div class="hub-name">${hub.name}</div>
+            <div class="hub-city">${hub.city}, ${hub.state}</div>
+          </div>
+        </div>
+        <div class="current-weather">
+          <div class="weather-icon">${icon}</div>
+          <div>
+            <div class="weather-temp">${temp}</div>
+            <div class="weather-desc">${desc}</div>
+          </div>
+        </div>
+        <div class="weather-details">
+          <span>💧 ${humid}</span>
+          <span>💨 ${wind}</span>
+          <span>Feels ${feels}</span>
+        </div>
+        <div class="forecast-row">${forecastHtml}</div>`;
+      grid.appendChild(card);
+
+    } catch(e) {
+      const card = document.createElement('div');
+      card.className = 'hub-card';
+      card.innerHTML = `<div class="hub-name">${hub.name}</div><div class="error">Failed to load weather</div>`;
+      grid.appendChild(card);
+    }
+  }));
+}
+
+// ── Crypto ───────────────────────────────────────────────────────────────────
+let cryptoData = {};
+
+async function loadCrypto() {
+  const grid = document.getElementById('crypto-grid');
+  try {
+    const coins = ['ripple','bitcoin','ethereum'];
+    const symbols = {'ripple':'XRP','bitcoin':'BTC','ethereum':'ETH'};
+    const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coins.join(',')}&vs_currencies=usd&include_24hr_change=true`);
+    const data = await r.json();
+    grid.innerHTML = '';
+    for (const coin of coins) {
+      const price = data[coin]?.usd ?? 0;
+      const change = data[coin]?.usd_24h_change ?? 0;
+      const sym = symbols[coin];
+      const up = change >= 0;
+      cryptoData[sym] = {price, change};
+      const card = document.createElement('div');
+      card.className = 'crypto-card';
+      card.innerHTML = `
+        <div class="crypto-symbol">${sym}</div>
+        <div class="crypto-price">$${price.toFixed(sym==='BTC'?0:4)}</div>
+        <div class="crypto-change ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(change).toFixed(2)}% (24h)</div>`;
+      grid.appendChild(card);
+    }
+  } catch(e) {
+    grid.innerHTML = '<div class="error">Failed to load crypto prices</div>';
+  }
+}
+
+// ── Crypto News ──────────────────────────────────────────────────────────────
+async function loadNews() {
+  const list = document.getElementById('news-list');
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/news?category=crypto&per_page=6');
+    const data = await r.json();
+    list.innerHTML = '';
+    const articles = data.data || data.news || [];
+    if (articles.length === 0) throw new Error('no articles');
+    for (const a of articles.slice(0,6)) {
+      const item = document.createElement('div');
+      item.className = 'news-item';
+      item.innerHTML = `<a href="${a.url}" target="_blank">${a.title}</a>`;
+      list.appendChild(item);
+    }
+  } catch(e) {
+    // Fallback: static placeholder
+    list.innerHTML = '<div class="news-item">News feed unavailable — check <a href="https://coindesk.com" target="_blank">CoinDesk</a> or <a href="https://cointelegraph.com" target="_blank">CoinTelegraph</a> for latest crypto news.</div>';
+  }
+}
+
+// ── Text-to-Speech ────────────────────────────────────────────────────────────
+let speaking = false;
+
+function buildScript() {
+  const d = new Date();
+  const dayName = d.toLocaleDateString('en-US',{weekday:'long'});
+  const dateStr = d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  let script = `Good morning Bryan. Today is ${dayName}, ${dateStr}. Here is your morning briefing. `;
+
+  script += 'Regional weather update. ';
+  for (const hub of HUBS) {
+    const wx = weatherData[hub.name];
+    if (wx) {
+      script += `${hub.name}, ${hub.city}. Currently ${wx.temp}, ${wx.desc}, winds at ${wx.wind}. `;
+      if (wx.days.length) {
+        script += `Forecast: ${wx.days.map(d=>`${d.day} ${d.hi} high ${d.lo} low`).join(', ')}. `;
+      }
+    }
+  }
+
+  script += 'Crypto update. ';
+  for (const [sym, d] of Object.entries(cryptoData)) {
+    const dir = d.change >= 0 ? 'up' : 'down';
+    script += `${sym} is at ${sym==='BTC'?'$'+Math.round(d.price):'$'+d.price.toFixed(4)}, ${dir} ${Math.abs(d.change).toFixed(2)} percent in the last 24 hours. `;
+  }
+
+  script += 'That concludes your morning briefing. Have a great day and stay safe out there.';
+  return script;
+}
+
+function toggleBriefing() {
+  const btn = document.getElementById('play-btn');
+  if (speaking) {
+    speechSynthesis.cancel();
+    speaking = false;
+    btn.textContent = '▶ Play Briefing';
+    btn.classList.remove('playing');
+  } else {
+    const script = buildScript();
+    const utt = new SpeechSynthesisUtterance(script);
+    utt.rate = 0.95;
+    utt.pitch = 1.0;
+    utt.onend = () => {
+      speaking = false;
+      btn.textContent = '▶ Play Briefing';
+      btn.classList.remove('playing');
+    };
+    speechSynthesis.speak(utt);
+    speaking = true;
+    btn.textContent = '⏹ Stop';
+    btn.classList.add('playing');
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadWeather();
+loadCrypto();
+loadNews();
+</script>
+</body>
+</html>
