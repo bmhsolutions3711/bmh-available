@@ -197,8 +197,8 @@ let cryptoData = {};
 async function loadCrypto() {
   const grid = document.getElementById('crypto-grid');
   try {
-    const coins = ['ripple','bitcoin','ethereum'];
-    const symbols = {'ripple':'XRP','bitcoin':'BTC','ethereum':'ETH'};
+    const coins = ['ripple','hedera-hashgraph','constellation-labs','ondo-finance','stellar','xdce-crowd-sale','bitcoin'];
+    const symbols = {'ripple':'XRP','hedera-hashgraph':'HBAR','constellation-labs':'DAG','ondo-finance':'ONDO','stellar':'XLM','xdce-crowd-sale':'XDC','bitcoin':'BTC'};
     const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coins.join(',')}&vs_currencies=usd&include_24hr_change=true`);
     const data = await r.json();
     grid.innerHTML = '';
