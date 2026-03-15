@@ -94,61 +94,6 @@
       cursor: not-allowed;
     }
 
-    /* Script Runner Panel */
-    .script-panel {
-      background: white;
-      border-radius: 12px;
-      padding: 20px 24px;
-      margin-bottom: 24px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
-    .script-panel h2 {
-      font-size: 15px;
-      font-weight: 700;
-      color: #1e293b;
-      margin-bottom: 16px;
-    }
-    .script-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 10px;
-    }
-    .script-btn {
-      padding: 10px 14px;
-      border-radius: 8px;
-      border: 1.5px solid #1F4E79;
-      background: white;
-      color: #1F4E79;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s;
-      text-align: left;
-    }
-    .script-btn:hover { background: #EFF6FF; }
-    .script-btn.running { background: #FEF9C3; border-color: #ca8a04; color: #92400e; }
-    .script-btn.success { background: #DCFCE7; border-color: #16a34a; color: #15803d; }
-    .script-btn.error   { background: #FEE2E2; border-color: #dc2626; color: #b91c1c; }
-    .script-row { display: flex; gap: 8px; align-items: center; }
-    .script-row input {
-      flex: 1; border: 1.5px solid #d1d5db; border-radius: 6px;
-      padding: 8px 10px; font-size: 13px; color: #374151;
-    }
-    .script-log {
-      margin-top: 14px;
-      background: #0f172a;
-      color: #a3e635;
-      border-radius: 8px;
-      padding: 14px;
-      font-family: monospace;
-      font-size: 12px;
-      max-height: 220px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      display: none;
-    }
-    .script-log.visible { display: block; }
-
     /* Charts */
     .chart-grid {
       display: grid;
@@ -224,7 +169,7 @@
     <h1>BMH Solutions LLC — Business Dashboard</h1>
     <p>MC: 1700226 &nbsp;·&nbsp; DOT: 04349026 &nbsp;·&nbsp; Hotshot Trucking</p>
   </div>
-  <div class="updated">Last updated<br>03/15/2026 05:40 PM</div>
+  <div class="updated">Last updated<br>03/15/2026 05:48 PM</div>
 </div>
 
 <div class="container">
@@ -264,31 +209,7 @@
     <a href="planning.html" class="nav-btn inactive">&#128197; Planning</a>
     <a href="briefing.html" class="nav-btn inactive">&#9728;&#65039; Morning Briefing</a>
     <a href="organization.html" class="nav-btn inactive">&#9989; Tasks</a>
-  </div>
-
-  <!-- Script Runner Panel -->
-  <div class="script-panel">
-    <h2>⚙️ Run Scripts</h2>
-    <div class="script-grid">
-      <button class="script-btn" id="btn-sync-dashboard" onclick="runScript('sync-dashboard', this)">🔄 Sync Dashboard</button>
-      <button class="script-btn" id="btn-generate-invoice" onclick="runScript('generate-invoice', this)">🧾 Generate Invoice (last row)</button>
-      <button class="script-btn" id="btn-preview-email" onclick="runScript('preview-email', this)">👁️ Preview Load Email</button>
-      <button class="script-btn" id="btn-send-email" onclick="runScript('send-email', this)">📧 Send Load Email</button>
-    </div>
-
-    <!-- Row-specific actions -->
-    <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
-      <div class="script-row">
-        <input type="number" id="invoice-row" placeholder="Row #" min="2" style="width:80px;flex:none">
-        <button class="script-btn" onclick="runScriptWithRow('generate-invoice-row', document.getElementById('invoice-row').value, this)">🧾 Invoice for Row</button>
-      </div>
-      <div class="script-row">
-        <input type="number" id="email-row" placeholder="Row #" min="2" style="width:80px;flex:none">
-        <button class="script-btn" onclick="runScriptWithRow('send-email-row', document.getElementById('email-row').value, this)">📧 Email for Row</button>
-      </div>
-    </div>
-
-    <div class="script-log" id="script-log"></div>
+    <a href="operations.html" class="nav-btn inactive">&#9881;&#65039; Operations</a>
   </div>
 
   <!-- Open Invoices Table -->
@@ -722,93 +643,6 @@ function showCat(cat) {
     ).join('');
   }
   detail.style.display = 'block';
-}
-
-// ── Script Runner ──────────────────────────────────────────────────────────────
-const RUNNER_URL = 'http://localhost:9877';
-
-function logMsg(msg) {
-  const log = document.getElementById('script-log');
-  log.classList.add('visible');
-  log.textContent += msg + '\n';
-  log.scrollTop = log.scrollHeight;
-}
-
-function clearLog() {
-  const log = document.getElementById('script-log');
-  log.textContent = '';
-  log.classList.remove('visible');
-}
-
-function setBtnState(btn, state, label) {
-  btn.className = 'script-btn ' + state;
-  btn.textContent = label;
-  btn.disabled = (state === 'running');
-}
-
-async function pollJob(jobId, btn, originalLabel) {
-  while (true) {
-    await new Promise(r => setTimeout(r, 1000));
-    try {
-      const res  = await fetch(RUNNER_URL + '/job/' + jobId);
-      const data = await res.json();
-      if (data.status === 'running' || data.status === 'queued') continue;
-      if (data.status === 'done') {
-        setBtnState(btn, 'success', '✅ ' + originalLabel);
-        if (data.output) logMsg(data.output);
-        logMsg('\n✅ Done!');
-      } else {
-        setBtnState(btn, 'error', '❌ ' + originalLabel);
-        if (data.error) logMsg('ERROR: ' + data.error);
-        if (data.output) logMsg(data.output);
-      }
-      setTimeout(() => setBtnState(btn, '', originalLabel), 4000);
-      btn.disabled = false;
-      break;
-    } catch(e) {
-      setBtnState(btn, 'error', '❌ ' + originalLabel);
-      logMsg('Could not reach script runner. Is it running?');
-      btn.disabled = false;
-      break;
-    }
-  }
-}
-
-async function runScript(scriptKey, btn) {
-  const originalLabel = btn.textContent;
-  clearLog();
-  setBtnState(btn, 'running', '⏳ Running...');
-  logMsg('Starting: ' + originalLabel + '\n');
-  try {
-    const res  = await fetch(RUNNER_URL + '/run/' + scriptKey);
-    const data = await res.json();
-    if (data.error) { setBtnState(btn, 'error', '❌ ' + originalLabel); logMsg('Error: ' + data.error); btn.disabled=false; return; }
-    logMsg('Job started (id: ' + data.job_id + ')\nWaiting for output...\n');
-    pollJob(data.job_id, btn, originalLabel);
-  } catch(e) {
-    setBtnState(btn, 'error', '❌ ' + originalLabel);
-    logMsg('⚠️ Script runner not reachable on port 9877.\nMake sure script_runner.py is running:\n  python3 script_runner.py &');
-    btn.disabled = false;
-  }
-}
-
-async function runScriptWithRow(scriptKey, row, btn) {
-  if (!row) { alert('Please enter a row number'); return; }
-  const originalLabel = btn.textContent;
-  clearLog();
-  setBtnState(btn, 'running', '⏳ Running...');
-  logMsg('Starting: ' + originalLabel + ' (row ' + row + ')\n');
-  try {
-    const res  = await fetch(RUNNER_URL + '/run/' + scriptKey + '?row=' + row);
-    const data = await res.json();
-    if (data.error) { setBtnState(btn, 'error', '❌ ' + originalLabel); logMsg('Error: ' + data.error); btn.disabled=false; return; }
-    logMsg('Job started (id: ' + data.job_id + ')\nWaiting for output...\n');
-    pollJob(data.job_id, btn, originalLabel);
-  } catch(e) {
-    setBtnState(btn, 'error', '❌ ' + originalLabel);
-    logMsg('⚠️ Script runner not reachable on port 9877.\nMake sure script_runner.py is running:\n  python3 script_runner.py &');
-    btn.disabled = false;
-  }
 }
 </script>
 
