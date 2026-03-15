@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BMH Operations</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f1f5f9; min-height: 100vh; }
+    .header { background: #1F4E79; color: white; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 20px; font-weight: 700; }
+    .header .sub { font-size: 13px; opacity: 0.7; margin-top: 2px; }
+    .nav-buttons { display: flex; gap: 12px; padding: 20px 32px 0; }
+    .nav-btn { flex: 1; padding: 12px 24px; border-radius: 8px; font-size: 13px; font-weight: 600;
+               text-decoration: none; border: 2px solid #1F4E79; cursor: pointer; transition: all .15s;
+               letter-spacing: .3px; text-align: center; }
+    .nav-btn.active { background: #1F4E79; color: white; }
+    .nav-btn.inactive { background: white; color: #1F4E79; }
+    .content { padding: 24px 32px; max-width: 1100px; margin: 0 auto; }
+    .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .card h2 { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+    .card .desc { font-size: 13px; color: #6b7280; margin-bottom: 20px; }
+    .script-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+    .script-btn { padding: 12px 16px; border-radius: 8px; border: 1.5px solid #1F4E79; background: white;
+                  color: #1F4E79; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; text-align: left; }
+    .script-btn:hover { background: #EFF6FF; }
+    .script-btn.running { background: #FEF9C3; border-color: #ca8a04; color: #92400e; }
+    .script-btn.success { background: #DCFCE7; border-color: #16a34a; color: #15803d; }
+    .script-btn.error   { background: #FEE2E2; border-color: #dc2626; color: #b91c1c; }
+    .row-action { display: flex; gap: 8px; align-items: center; }
+    .row-action input { width: 90px; border: 1.5px solid #d1d5db; border-radius: 6px; padding: 10px 12px;
+                        font-size: 13px; color: #374151; }
+    .script-log { margin-top: 20px; background: #0f172a; color: #a3e635; border-radius: 10px; padding: 16px;
+                  font-family: 'Courier New', monospace; font-size: 12px; max-height: 300px; overflow-y: auto;
+                  white-space: pre-wrap; display: none; }
+    .script-log.visible { display: block; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .status-dot.online { background: #16a34a; }
+    .status-dot.offline { background: #dc2626; }
+    .runner-status { font-size: 13px; color: #6b7280; display: flex; align-items: center; }
+    .divider { height: 1px; background: #f1f5f9; margin: 16px 0; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>⚙️ BMH Operations</h1>
+    <div class="sub">Script runner &amp; automation controls</div>
+  </div>
+  <div class="runner-status">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusText">Checking runner...</span>
+  </div>
+</div>
+
+<div class="nav-buttons">
+  <a href="dashboard.html" class="nav-btn inactive">📊 Dashboard</a>
+  <a href="planning.html" class="nav-btn inactive">📅 Planning</a>
+  <a href="briefing.html" class="nav-btn inactive">☀️ Morning Briefing</a>
+  <a href="organization.html" class="nav-btn inactive">✅ Tasks</a>
+  <a href="operations.html" class="nav-btn active">⚙️ Operations</a>
+</div>
+
+<div class="content">
+
+  <!-- Dashboard & Sync -->
+  <div class="card">
+    <h2>📊 Dashboard</h2>
+    <div class="desc">Regenerate and publish the dashboard to GitHub Pages.</div>
+    <div class="script-grid">
+      <button class="script-btn" onclick="runScript('sync-dashboard', this)">🔄 Sync Dashboard</button>
+    </div>
+  </div>
+
+  <!-- Invoices -->
+  <div class="card">
+    <h2>🧾 Invoices</h2>
+    <div class="desc">Generate PDF invoices from load data.</div>
+    <div class="script-grid">
+      <button class="script-btn" onclick="runScript('generate-invoice', this)">🧾 Generate Invoice (last row)</button>
+    </div>
+    <div class="divider"></div>
+    <div class="row-action">
+      <input type="number" id="invoice-row" placeholder="Row #" min="2">
+      <button class="script-btn" onclick="runScriptWithRow('generate-invoice-row', document.getElementById('invoice-row').value, this)">🧾 Invoice for Specific Row</button>
+    </div>
+  </div>
+
+  <!-- Emails -->
+  <div class="card">
+    <h2>📧 Load Emails</h2>
+    <div class="desc">Send completion emails with invoice, BOL, POD, and signed rate sheet attached.</div>
+    <div class="script-grid">
+      <button class="script-btn" onclick="runScript('preview-email', this)">👁️ Preview Load Email (last row)</button>
+      <button class="script-btn" onclick="runScript('send-email', this)">📧 Send Load Email (last row)</button>
+    </div>
+    <div class="divider"></div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div class="row-action">
+        <input type="number" id="preview-email-row" placeholder="Row #" min="2">
+        <button class="script-btn" onclick="runScriptWithRowCustom('preview-email-row-custom', document.getElementById('preview-email-row').value, this)">👁️ Preview for Row</button>
+      </div>
+      <div class="row-action">
+        <input type="number" id="email-row" placeholder="Row #" min="2">
+        <button class="script-btn" onclick="runScriptWithRow('send-email-row', document.getElementById('email-row').value, this)">📧 Send Email for Row</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Terminal Log -->
+  <div class="card">
+    <h2>📟 Output Log</h2>
+    <div class="desc">Script output appears here.</div>
+    <div class="script-log visible" id="script-log">Ready. Click a button above to run a script.</div>
+  </div>
+
+</div>
+
+<script>
+const RUNNER_URL = 'http://localhost:9877';
+
+// Check runner status on load
+async function checkRunner() {
+  try {
+    const res = await fetch(RUNNER_URL + '/scripts', { signal: AbortSignal.timeout(2000) });
+    if (res.ok) {
+      document.getElementById('statusDot').className = 'status-dot online';
+      document.getElementById('statusText').textContent = 'Script runner online';
+    }
+  } catch {
+    document.getElementById('statusDot').className = 'status-dot offline';
+    document.getElementById('statusText').textContent = 'Script runner offline';
+    logMsg('⚠️  Script runner not detected on port 9877.\nStart it with: python3 script_runner.py &');
+  }
+}
+checkRunner();
+
+function logMsg(msg) {
+  const log = document.getElementById('script-log');
+  log.classList.add('visible');
+  log.textContent += msg + '\n';
+  log.scrollTop = log.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('script-log').textContent = '';
+}
+
+function setBtnState(btn, state, label) {
+  btn.className = 'script-btn ' + state;
+  btn.textContent = label;
+  btn.disabled = (state === 'running');
+}
+
+async function pollJob(jobId, btn, originalLabel) {
+  while (true) {
+    await new Promise(r => setTimeout(r, 1000));
+    try {
+      const res  = await fetch(RUNNER_URL + '/job/' + jobId);
+      const data = await res.json();
+      if (data.status === 'running' || data.status === 'queued') continue;
+      if (data.status === 'done') {
+        setBtnState(btn, 'success', '✅ ' + originalLabel);
+        if (data.output) logMsg(data.output);
+        logMsg('\n✅ Done!');
+      } else {
+        setBtnState(btn, 'error', '❌ ' + originalLabel);
+        if (data.error)  logMsg('ERROR: ' + data.error);
+        if (data.output) logMsg(data.output);
+      }
+      setTimeout(() => setBtnState(btn, '', originalLabel), 4000);
+      btn.disabled = false;
+      break;
+    } catch(e) {
+      setBtnState(btn, 'error', '❌ ' + originalLabel);
+      logMsg('Lost connection to script runner.');
+      btn.disabled = false;
+      break;
+    }
+  }
+}
+
+async function runScript(scriptKey, btn) {
+  const originalLabel = btn.textContent;
+  clearLog();
+  setBtnState(btn, 'running', '⏳ Running...');
+  logMsg('▶ Starting: ' + originalLabel + '\n');
+  try {
+    const res  = await fetch(RUNNER_URL + '/run/' + scriptKey);
+    const data = await res.json();
+    if (data.error) { setBtnState(btn, 'error', '❌ ' + originalLabel); logMsg('Error: ' + data.error); btn.disabled=false; return; }
+    logMsg('Job ID: ' + data.job_id + '\nWaiting for output...\n');
+    pollJob(data.job_id, btn, originalLabel);
+  } catch(e) {
+    setBtnState(btn, 'error', '❌ ' + originalLabel);
+    logMsg('⚠️ Cannot reach script runner on port 9877.\nRun: python3 script_runner.py &');
+    btn.disabled = false;
+  }
+}
+
+async function runScriptWithRow(scriptKey, row, btn) {
+  if (!row) { alert('Please enter a row number'); return; }
+  const originalLabel = btn.textContent;
+  clearLog();
+  setBtnState(btn, 'running', '⏳ Running...');
+  logMsg('▶ Starting: ' + originalLabel + ' (row ' + row + ')\n');
+  try {
+    const res  = await fetch(RUNNER_URL + '/run/' + scriptKey + '?row=' + row);
+    const data = await res.json();
+    if (data.error) { setBtnState(btn, 'error', '❌ ' + originalLabel); logMsg('Error: ' + data.error); btn.disabled=false; return; }
+    logMsg('Job ID: ' + data.job_id + '\nWaiting for output...\n');
+    pollJob(data.job_id, btn, originalLabel);
+  } catch(e) {
+    setBtnState(btn, 'error', '❌ ' + originalLabel);
+    logMsg('⚠️ Cannot reach script runner on port 9877.\nRun: python3 script_runner.py &');
+    btn.disabled = false;
+  }
+}
+
+async function runScriptWithRowCustom(scriptKey, row, btn) {
+  // preview-email with row uses send_load_email.py --preview --row N
+  if (!row) { alert('Please enter a row number'); return; }
+  const originalLabel = btn.textContent;
+  clearLog();
+  setBtnState(btn, 'running', '⏳ Running...');
+  logMsg('▶ Starting: ' + originalLabel + ' (row ' + row + ')\n');
+  try {
+    const res  = await fetch(RUNNER_URL + '/run/send-email-row?row=' + row + '&preview=1');
+    const data = await res.json();
+    if (data.error) { setBtnState(btn, 'error', '❌ ' + originalLabel); logMsg('Error: ' + data.error); btn.disabled=false; return; }
+    logMsg('Job ID: ' + data.job_id + '\nWaiting for output...\n');
+    pollJob(data.job_id, btn, originalLabel);
+  } catch(e) {
+    setBtnState(btn, 'error', '❌ ' + originalLabel);
+    logMsg('⚠️ Cannot reach script runner on port 9877.\nRun: python3 script_runner.py &');
+    btn.disabled = false;
+  }
+}
+</script>
+
+</body>
+</html>
