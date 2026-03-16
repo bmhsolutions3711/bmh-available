@@ -108,6 +108,41 @@
     </div>
   </div>
 
+  <!-- Availability Updater -->
+  <div class="card">
+    <h2>📍 Update Availability</h2>
+    <div class="desc">Update your available location card without running the rate agent. Add length and weight if looking for partials.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#1F4E79;text-transform:uppercase;letter-spacing:.05em">City</label>
+        <input type="text" id="avail-city" placeholder="e.g. Dallas" style="width:100%;border:1.5px solid #d1d5db;border-radius:6px;padding:9px 11px;font-size:13px;color:#1e293b;margin-top:5px">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#1F4E79;text-transform:uppercase;letter-spacing:.05em">State</label>
+        <input type="text" id="avail-state" placeholder="e.g. TX" maxlength="2" style="width:100%;border:1.5px solid #d1d5db;border-radius:6px;padding:9px 11px;font-size:13px;color:#1e293b;margin-top:5px">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#1F4E79;text-transform:uppercase;letter-spacing:.05em">Available Date</label>
+        <input type="text" id="avail-date" placeholder="e.g. 03/20/2026" style="width:100%;border:1.5px solid #d1d5db;border-radius:6px;padding:9px 11px;font-size:13px;color:#1e293b;margin-top:5px">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#1F4E79;text-transform:uppercase;letter-spacing:.05em">Available Length (ft)</label>
+        <input type="text" id="avail-length" placeholder="e.g. 40" style="width:100%;border:1.5px solid #d1d5db;border-radius:6px;padding:9px 11px;font-size:13px;color:#1e293b;margin-top:5px">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#1F4E79;text-transform:uppercase;letter-spacing:.05em">Weight Capacity (lbs)</label>
+        <input type="text" id="avail-weight" placeholder="e.g. 16500" style="width:100%;border:1.5px solid #d1d5db;border-radius:6px;padding:9px 11px;font-size:13px;color:#1e293b;margin-top:5px">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#1F4E79;text-transform:uppercase;letter-spacing:.05em">Zip (optional)</label>
+        <input type="text" id="avail-zip" placeholder="e.g. 75201" style="width:100%;border:1.5px solid #d1d5db;border-radius:6px;padding:9px 11px;font-size:13px;color:#1e293b;margin-top:5px">
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <button class="script-btn" onclick="updateAvailability(this)">📍 Update Availability Card</button>
+    </div>
+  </div>
+
   <!-- Terminal Log -->
   <div class="card">
     <h2>📟 Output Log</h2>
@@ -355,6 +390,42 @@ async function saveMaintenance() {
 }
 
 loadMaintenance();
+
+async function updateAvailability(btn) {
+  const city   = document.getElementById('avail-city').value.trim();
+  const state  = document.getElementById('avail-state').value.trim();
+  const zip    = document.getElementById('avail-zip').value.trim();
+  const date   = document.getElementById('avail-date').value.trim();
+  const length = document.getElementById('avail-length').value.trim();
+  const weight = document.getElementById('avail-weight').value.trim();
+
+  if (!city || !state) { logMsg('⚠️ City and State are required.'); return; }
+
+  const originalLabel = btn.textContent;
+  clearLog();
+  setBtnState(btn, 'running', '⏳ Updating...');
+  logMsg('▶ Updating availability card...\n');
+
+  const url = RUNNER_URL + '/run/update-availability'
+    + '?city=' + encodeURIComponent(city)
+    + '&state=' + encodeURIComponent(state)
+    + '&zip=' + encodeURIComponent(zip)
+    + '&date=' + encodeURIComponent(date || new Date().toLocaleDateString('en-US'))
+    + '&length=' + encodeURIComponent(length)
+    + '&weight=' + encodeURIComponent(weight);
+
+  try {
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.error) { setBtnState(btn, 'error', '❌ ' + originalLabel); logMsg('Error: ' + data.error); btn.disabled=false; return; }
+    logMsg('Job ID: ' + data.job_id + '\nWaiting...\n');
+    pollJob(data.job_id, btn, originalLabel);
+  } catch(e) {
+    setBtnState(btn, 'error', '❌ ' + originalLabel);
+    logMsg('⚠️ Cannot reach script runner on port 9877.');
+    btn.disabled = false;
+  }
+}
 </script>
 
 </body>
