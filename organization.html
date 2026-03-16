@@ -137,6 +137,8 @@
     .tf-select { background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.07); border-radius:7px; padding:7px 5px; color:var(--light); font-size:11px; font-family:'DM Sans',sans-serif; outline:none; cursor:pointer; }
 
     /* ── Finished Per-Category ── */
+    .fin-month-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--gray); padding:8px 14px 3px; border-top:1px solid rgba(255,255,255,.04); }
+    .fin-month-label:first-of-type { border-top:none; }
     .fin-section { border-top:1px solid rgba(255,255,255,.05); }
     .fin-header { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; cursor:pointer; user-select:none; }
     .fin-header:hover { background:rgba(255,255,255,.02); }
@@ -203,9 +205,9 @@
       <div class="add-row">
         <input class="add-input" id="inp-business" placeholder="Add task..." onkeydown="catKey(event,'business')">
         <select class="tf-select" id="tf-business">
-          <option value="weekly" selected>Weekly</option>
-          <option value="quarterly">Quarterly</option>
-          <option value="annual">Annual</option>
+          <option value="weekly" selected>This Week</option>
+          <option value="quarterly">This Quarter</option>
+          <option value="annual">This Year</option>
         </select>
       </div>
       <div class="fin-section">
@@ -230,9 +232,9 @@
       <div class="add-row">
         <input class="add-input" id="inp-personal" placeholder="Add task..." onkeydown="catKey(event,'personal')">
         <select class="tf-select" id="tf-personal">
-          <option value="weekly" selected>Weekly</option>
-          <option value="quarterly">Quarterly</option>
-          <option value="annual">Annual</option>
+          <option value="weekly" selected>This Week</option>
+          <option value="quarterly">This Quarter</option>
+          <option value="annual">This Year</option>
         </select>
       </div>
       <div class="fin-section">
@@ -257,9 +259,9 @@
       <div class="add-row">
         <input class="add-input" id="inp-spiritual" placeholder="Add task..." onkeydown="catKey(event,'spiritual')">
         <select class="tf-select" id="tf-spiritual">
-          <option value="weekly" selected>Weekly</option>
-          <option value="quarterly">Quarterly</option>
-          <option value="annual">Annual</option>
+          <option value="weekly" selected>This Week</option>
+          <option value="quarterly">This Quarter</option>
+          <option value="annual">This Year</option>
         </select>
       </div>
       <div class="fin-section">
@@ -295,7 +297,7 @@
   const REF = doc(db, 'tasks', 'bmh');
 
   const TIMEFRAMES = ['weekly','quarterly','annual'];
-  const TF_LABELS  = { weekly:'Weekly', quarterly:'Quarterly', annual:'Annual' };
+  const TF_LABELS  = { weekly:'This Week', quarterly:'This Quarter', annual:'This Year' };
 
   let tasks = { quick:[], business:[], personal:[], spiritual:[] };
   let saveTimer = null;
@@ -336,7 +338,17 @@
 
   function toggleDone(cat, id) {
     const t = tasks[cat].find(t=>t.id===id);
-    if (t) { t.done=!t.done; renderAll(); save(); }
+    if (!t) return;
+    t.done = !t.done;
+    if (t.done) {
+      const now = new Date();
+      t.completedMonth = now.toLocaleDateString('en-US',{month:'long',year:'numeric'}); // e.g. "March 2026"
+      t.completedDate  = now.toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'});
+    } else {
+      delete t.completedMonth;
+      delete t.completedDate;
+    }
+    renderAll(); save();
   }
 
   // ── Render ──
@@ -394,18 +406,78 @@
       if (!el) return;
       const done = tasks[cat].filter(t=>t.done);
       cnt.textContent = `(${done.length})`;
-      el.innerHTML = done.length ? done.map(t=>`
-        <div class="task-item" style="opacity:.4">
-          <span class="drag-h">⠿</span>
-          <input type="checkbox" class="task-cb" checked onchange="window._td('${cat}',${t.id})">
-          <div class="task-body">
-            <div class="task-text done">${esc(t.text)}</div>
-            <div class="task-date">${t.created||''}</div>
-          </div>
-        </div>`).join('')
-        : '<div class="empty-state">Nothing completed yet</div>';
+      if (!done.length) { el.innerHTML='<div class="empty-state">Nothing completed yet</div>'; return; }
+
+      // Group by completedMonth
+      const byMonth = {};
+      done.forEach(t => {
+        const mo = t.completedMonth || 'Earlier';
+        if (!byMonth[mo]) byMonth[mo] = [];
+        byMonth[mo].push(t);
+      });
+
+      // Sort months descending (most recent first)
+      const monthOrder = Object.keys(byMonth).sort((a,b) => {
+        if (a==='Earlier') return 1; if (b==='Earlier') return -1;
+        return new Date('1 '+b) - new Date('1 '+a);
+      });
+
+      let html = `<div style="padding:6px 14px 4px;text-align:right">
+        <button onclick="exportFinished('${cat}')" style="background:rgba(0,207,255,.12);border:1px solid var(--cyan);border-radius:8px;padding:4px 10px;color:var(--cyan);font-size:10px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif">⬇ Export</button>
+      </div>`;
+
+      monthOrder.forEach(mo => {
+        html += `<div class="fin-month-label">${mo}</div>`;
+        html += byMonth[mo].map(t=>`
+          <div class="task-item" style="opacity:.45">
+            <span class="drag-h">⠿</span>
+            <input type="checkbox" class="task-cb" checked onchange="window._td('${cat}',${t.id})">
+            <div class="task-body">
+              <div class="task-text done">${esc(t.text)}</div>
+              <div class="task-date">${t.completedDate||t.created||''} · ${t.timeframe||'weekly'}</div>
+            </div>
+          </div>`).join('');
+      });
+
+      el.innerHTML = html;
     });
   }
+
+  window.exportFinished = (cat) => {
+    const done = tasks[cat].filter(t=>t.done);
+    if (!done.length) { showToast('Nothing to export'); return; }
+
+    // Group by month
+    const byMonth = {};
+    done.forEach(t => {
+      const mo = t.completedMonth || 'Earlier';
+      if (!byMonth[mo]) byMonth[mo] = [];
+      byMonth[mo].push(t);
+    });
+    const monthOrder = Object.keys(byMonth).sort((a,b)=>{
+      if (a==='Earlier') return 1; if (b==='Earlier') return -1;
+      return new Date('1 '+b) - new Date('1 '+a);
+    });
+
+    const label = cat.charAt(0).toUpperCase()+cat.slice(1);
+    let text = `BMH Tasks — ${label} Completed\n${'='.repeat(40)}\n\n`;
+    monthOrder.forEach(mo => {
+      text += `${mo}\n${'-'.repeat(mo.length)}\n`;
+      byMonth[mo].forEach(t => {
+        text += `  ✓ ${t.text}  [${t.timeframe||'weekly'}]  ${t.completedDate||''}\n`;
+      });
+      text += '\n';
+    });
+
+    const blob = new Blob([text], {type:'text/plain'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = `bmh-${cat}-completed.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Exported!');
+  };
 
   function updateCounts() {
     ['business','personal','spiritual'].forEach(cat => {
