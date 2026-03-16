@@ -115,8 +115,8 @@
     }
     .task-item:last-child { border-bottom:none; }
     .task-item:hover { background:rgba(255,255,255,.02); }
-    .drag-h { color:rgba(255,255,255,.13); font-size:12px; margin-top:2px; flex-shrink:0; }
-    .task-cb { width:16px; height:16px; border-radius:4px; border:1.5px solid rgba(255,255,255,.2); background:transparent; flex-shrink:0; cursor:pointer; appearance:none; -webkit-appearance:none; margin-top:2px; position:relative; transition:all .15s; }
+    .drag-h { color:rgba(255,255,255,.13); font-size:12px; flex-shrink:0; align-self:center; }
+    .task-cb { width:16px; height:16px; border-radius:4px; border:1.5px solid rgba(255,255,255,.2); background:transparent; flex-shrink:0; cursor:pointer; appearance:none; -webkit-appearance:none; margin-top:0; align-self:center; position:relative; transition:all .15s; }
     .task-cb:checked { background:var(--done); border-color:var(--done); }
     .task-cb:checked::after { content:'✓'; position:absolute; top:-1px; left:2px; font-size:11px; color:#fff; font-weight:700; }
     .task-body { flex:1; min-width:0; }
@@ -156,6 +156,11 @@
     .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--steel); border:1px solid rgba(0,207,255,.3); border-radius:10px; padding:9px 18px; font-size:12px; font-weight:500; color:var(--cyan); transition:transform .3s cubic-bezier(.34,1.56,.64,1); z-index:999; white-space:nowrap; }
     .toast.show { transform:translateX(-50%) translateY(0); }
 
+    .task-edit-input {
+      flex:1; background:rgba(0,0,0,.4); border:1px solid var(--cyan);
+      border-radius:6px; padding:4px 8px; color:var(--white);
+      font-size:20px; font-family:'DM Sans',sans-serif; outline:none;
+    }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
     ::-webkit-scrollbar { width:3px; } ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.1); border-radius:2px; }
   </style>
@@ -393,11 +398,34 @@
       <span class="drag-h">⠿</span>
       <input type="checkbox" class="task-cb" onchange="window._td('${cat}',${t.id})">
       <div class="task-body">
-        <div class="task-text">${esc(t.text)}</div>
+        <div class="task-text" ondblclick="window._edit('${cat}',${t.id},this)" title="Double-click to edit" style="cursor:text">${esc(t.text)}</div>
         ${showDate ? `<div class="task-date">${t.created||''}</div>` : ''}
       </div>
     </div>`;
   }
+
+  window._edit = (cat, id, textEl) => {
+    const t = tasks[cat].find(t=>t.id===id);
+    if (!t) return;
+    const inp = document.createElement('input');
+    inp.className = 'task-edit-input';
+    inp.value = t.text;
+    textEl.replaceWith(inp);
+    inp.focus(); inp.select();
+    let committed = false;
+    const commit = () => {
+      if (committed) return;
+      committed = true;
+      const val = inp.value.trim();
+      if (val) { t.text=val; save(); }
+      renderAll();
+    };
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => {
+      if (e.key==='Enter') { commit(); }
+      if (e.key==='Escape') { committed=true; renderAll(); }
+    });
+  };
 
   function renderFinished() {
     ['business','personal','spiritual'].forEach(cat => {
