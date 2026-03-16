@@ -123,7 +123,7 @@
       </div>
       <div>
         <label style="font-size:11px;font-weight:700;color:#1F4E79;text-transform:uppercase;letter-spacing:.05em">Available Date</label>
-        <input type="text" id="avail-date" placeholder="e.g. 03/20/2026" style="width:100%;border:1.5px solid #d1d5db;border-radius:6px;padding:9px 11px;font-size:13px;color:#1e293b;margin-top:5px">
+        <input type="date" id="avail-date" style="width:100%;border:1.5px solid #d1d5db;border-radius:6px;padding:9px 11px;font-size:13px;color:#1e293b;margin-top:5px">
       </div>
       <div>
         <label style="font-size:11px;font-weight:700;color:#1F4E79;text-transform:uppercase;letter-spacing:.05em">Available Length (ft)</label>
@@ -391,11 +391,32 @@ async function saveMaintenance() {
 
 loadMaintenance();
 
+async function loadAvailability() {
+  try {
+    const res  = await fetch(RUNNER_URL + '/availability');
+    const data = await res.json();
+    if (data.city)   document.getElementById('avail-city').value   = data.city;
+    if (data.state)  document.getElementById('avail-state').value  = data.state;
+    if (data.zip)    document.getElementById('avail-zip').value    = data.zip;
+    if (data.length) document.getElementById('avail-length').value = data.length;
+    if (data.weight) document.getElementById('avail-weight').value = data.weight;
+    // Convert mm/dd/yyyy date back to yyyy-mm-dd for date picker
+    if (data.date) {
+      const parts = data.date.split('/');
+      if (parts.length === 3) {
+        document.getElementById('avail-date').value = parts[2] + '-' + parts[0] + '-' + parts[1];
+      }
+    }
+  } catch(e) { /* runner offline */ }
+}
+loadAvailability();
+
 async function updateAvailability(btn) {
   const city   = document.getElementById('avail-city').value.trim();
   const state  = document.getElementById('avail-state').value.trim();
   const zip    = document.getElementById('avail-zip').value.trim();
-  const date   = document.getElementById('avail-date').value.trim();
+  const rawDate = document.getElementById('avail-date').value.trim();
+  const date = rawDate ? new Date(rawDate + 'T12:00:00').toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}) : new Date().toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'});
   const length = document.getElementById('avail-length').value.trim();
   const weight = document.getElementById('avail-weight').value.trim();
 
