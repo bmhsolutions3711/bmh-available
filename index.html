@@ -3,162 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BMH Solutions — Available Location</title>
+  <title>BMH Solutions — Available</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f0f4f8;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
-    }
-    .card {
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
-      max-width: 480px;
-      width: 100%;
-      overflow: hidden;
-    }
-    .header {
-      background: #1F4E79;
-      color: white;
-      padding: 28px 32px 22px;
-    }
-    .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
-    .header p  { font-size: 13px; opacity: 0.75; margin-top: 4px; }
-    .body { padding: 28px 32px; }
-    .label {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: #6b7280;
-      margin-bottom: 4px;
-    }
-    .location {
-      font-size: 28px;
-      font-weight: 700;
-      color: #111827;
-      margin-bottom: 6px;
-      line-height: 1.2;
-    }
-    .date {
-      font-size: 15px;
-      color: #374151;
-      margin-bottom: 24px;
-    }
-    .specs {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    .spec-box {
-      flex: 1;
-      background: #f0f4f8;
-      border-radius: 10px;
-      padding: 12px 14px;
-      text-align: center;
-    }
-    .spec-label {
-      font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.7px;
-      color: #6b7280;
-      margin-bottom: 4px;
-    }
-    .spec-value {
-      font-size: 18px;
-      font-weight: 700;
-      color: #1F4E79;
-    }
-    .spec-unit {
-      font-size: 11px;
-      color: #6b7280;
-      margin-top: 2px;
-    }
-    .map-frame {
-      width: 100%;
-      height: 220px;
-      border: none;
-      border-radius: 10px;
-      margin-bottom: 20px;
-    }
-    .btn {
-      display: block;
-      width: 100%;
-      padding: 14px;
-      background: #1F4E79;
-      color: white;
-      text-align: center;
-      text-decoration: none;
-      border-radius: 10px;
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 12px;
-      transition: background 0.2s;
-    }
-    .btn:hover { background: #163d5e; }
-    .contact {
-      text-align: center;
-      font-size: 13px;
-      color: #6b7280;
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid #e5e7eb;
-    }
-    .contact strong { color: #374151; }
-    .updated {
-      font-size: 11px;
-      color: #9ca3af;
-      text-align: center;
-      margin-top: 8px;
-    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#f0f4f8; display:flex; justify-content:center; align-items:center; min-height:100vh; padding:20px; }
+    .card { background:white; border-radius:16px; box-shadow:0 4px 24px rgba(0,0,0,0.10); padding:36px 40px; max-width:480px; width:100%; }
+    .logo { font-size:22px; font-weight:800; color:#1F4E79; letter-spacing:-0.5px; margin-bottom:4px; }
+    .tagline { font-size:13px; color:#64748b; margin-bottom:28px; }
+    .badge { display:inline-block; background:#dcfce7; color:#15803d; font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; margin-bottom:20px; letter-spacing:.3px; }
+    .label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#94a3b8; margin-bottom:6px; }
+    .location-text { font-size:28px; font-weight:800; color:#1F4E79; line-height:1.2; margin-bottom:6px; }
+    .date-text { font-size:15px; color:#475569; margin-bottom:28px; }
+    .divider { height:1px; background:#f1f5f9; margin-bottom:24px; }
+    .contact-row { display:flex; gap:12px; flex-wrap:wrap; }
+    .contact-btn { flex:1; min-width:120px; padding:12px 16px; border-radius:10px; text-decoration:none; text-align:center; font-size:13px; font-weight:600; transition:opacity .15s; }
+    .btn-call { background:#1F4E79; color:white; }
+    .btn-map  { background:#f0f4f8; color:#1F4E79; border:1.5px solid #1F4E79; }
+    .btn-email { background:#f0f4f8; color:#1F4E79; border:1.5px solid #1F4E79; }
+    .updated { font-size:10px; color:#cbd5e1; text-align:center; margin-top:20px; }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="header">
-      <h1>BMH Solutions LLC</h1>
-      <p>Hotshot Trucking &nbsp;·&nbsp; MC: 1700226 &nbsp;·&nbsp; DOT: 04349026</p>
+    <div class="logo">BMH Solutions LLC</div>
+    <div class="tagline">MC: 1700226 &nbsp;·&nbsp; DOT: 04349026 &nbsp;·&nbsp; Hotshot Trucking</div>
+    <div class="badge">✅ Available Now</div>
+    <div class="label">Next Available Near</div>
+    <div class="location-text">North Canton, OH, 44720</div>
+    <div class="date-text">Available 03/16/2026</div>
+    
+    <div class="divider"></div>
+    <div class="contact-row">
+      <a href="tel:614-704-3088" class="contact-btn btn-call">📞 Call</a>
+      <a href="https://maps.google.com/?q={query}" target="_blank" class="contact-btn btn-map">📍 Map</a>
+      <a href="mailto:bmhsolutions3711@gmail.com" class="contact-btn btn-email">✉️ Email</a>
     </div>
-    <div class="body">
-      <div class="label">Next Available Near</div>
-      <div class="location">📍 Quincy, IL, 62305</div>
-      <div class="date">Available from: <strong>03/14/2026</strong></div>
-
-      <div class="specs">
-        <div class="spec-box">
-          <div class="spec-label">Trailer Length</div>
-          <div class="spec-value">20 ft</div>
-          <div class="spec-unit">Hotshot</div>
-        </div>
-        <div class="spec-box">
-          <div class="spec-label">Weight Capacity</div>
-          <div class="spec-value">9,500</div>
-          <div class="spec-unit">lbs</div>
-        </div>
-      </div>
-
-      <iframe class="map-frame"
-        src="https://maps.google.com/maps?q=Quincy%2C+IL%2C+62305&output=embed"
-        allowfullscreen loading="lazy">
-      </iframe>
-
-      <a class="btn" href="https://maps.google.com/?q=Quincy%2C+IL%2C+62305" target="_blank">
-        Open in Google Maps
-      </a>
-
-      <div class="contact">
-        <strong>Bryan Hertzig</strong> — 614-704-3088<br>
-        bmhsolutions3711@gmail.com
-      </div>
-      <div class="updated">Last updated: 03/12/2026 11:05 AM</div>
-    </div>
+    <div class="updated">Updated 03/16/2026 08:47 AM</div>
   </div>
 </body>
 </html>
