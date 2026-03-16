@@ -115,10 +115,61 @@
     <div class="script-log visible" id="script-log">Ready. Click a button above to run a script.</div>
   </div>
 
+  <!-- Maintenance Updater -->
+  <div class="card">
+    <h2>🚚 F250 — Update Maintenance</h2>
+    <div class="desc">Update odometer and last service records. Changes save directly to maintenance.json.</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:4px">
+
+      <!-- Current Odometer -->
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#1F4E79;text-transform:uppercase;letter-spacing:.05em">Current Odometer (mi)</label>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <input type="number" id="m-odometer" placeholder="e.g. 65000" style="flex:1;border:1.5px solid #d1d5db;border-radius:6px;padding:10px 12px;font-size:14px;color:#1e293b">
+          <button class="script-btn" style="white-space:nowrap" onclick="saveMaintenance()">💾 Save All</button>
+        </div>
+      </div>
+
+      <!-- Spacer -->
+      <div></div>
+
+      <!-- Oil Change -->
+      <div style="background:#f8fafc;border-radius:8px;padding:14px;border:1px solid #e2e8f0">
+        <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:10px">🛢️ Oil Change</div>
+        <label style="font-size:11px;color:#64748b;font-weight:600">Last Service (mi)</label>
+        <input type="number" id="m-oil-last" placeholder="e.g. 60000" style="width:100%;border:1.5px solid #d1d5db;border-radius:6px;padding:8px 10px;font-size:13px;margin-top:4px;margin-bottom:8px">
+        <label style="font-size:11px;color:#64748b;font-weight:600">Interval (mi)</label>
+        <input type="number" id="m-oil-interval" placeholder="e.g. 5000" style="width:100%;border:1.5px solid #d1d5db;border-radius:6px;padding:8px 10px;font-size:13px;margin-top:4px">
+      </div>
+
+      <!-- Tire Rotation -->
+      <div style="background:#f8fafc;border-radius:8px;padding:14px;border:1px solid #e2e8f0">
+        <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:10px">🔄 Tire Rotation</div>
+        <label style="font-size:11px;color:#64748b;font-weight:600">Last Service (mi)</label>
+        <input type="number" id="m-tire-last" placeholder="e.g. 55000" style="width:100%;border:1.5px solid #d1d5db;border-radius:6px;padding:8px 10px;font-size:13px;margin-top:4px;margin-bottom:8px">
+        <label style="font-size:11px;color:#64748b;font-weight:600">Interval (mi)</label>
+        <input type="number" id="m-tire-interval" placeholder="e.g. 7500" style="width:100%;border:1.5px solid #d1d5db;border-radius:6px;padding:8px 10px;font-size:13px;margin-top:4px">
+      </div>
+
+      <!-- Air Filter -->
+      <div style="background:#f8fafc;border-radius:8px;padding:14px;border:1px solid #e2e8f0">
+        <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:10px">💨 Air Filter</div>
+        <label style="font-size:11px;color:#64748b;font-weight:600">Last Service (mi)</label>
+        <input type="number" id="m-air-last" placeholder="e.g. 50000" style="width:100%;border:1.5px solid #d1d5db;border-radius:6px;padding:8px 10px;font-size:13px;margin-top:4px;margin-bottom:8px">
+        <label style="font-size:11px;color:#64748b;font-weight:600">Interval (mi)</label>
+        <input type="number" id="m-air-interval" placeholder="e.g. 15000" style="width:100%;border:1.5px solid #d1d5db;border-radius:6px;padding:8px 10px;font-size:13px;margin-top:4px">
+      </div>
+
+    </div>
+
+    <div id="m-status" style="margin-top:14px;font-size:13px;color:#16a34a;font-weight:600;display:none"></div>
+  </div>
+
 </div>
 
 <script>
-const RUNNER_URL = 'http://localhost:9877';
+const RUNNER_URL = 'http://100.122.71.30:9877';
 
 // Check runner status on load
 async function checkRunner() {
@@ -237,6 +288,72 @@ async function runScriptWithRowCustom(scriptKey, row, btn) {
     btn.disabled = false;
   }
 }
+
+// ── Maintenance ────────────────────────────────────────────────
+async function loadMaintenance() {
+  try {
+    const res  = await fetch(RUNNER_URL + '/maintenance');
+    const data = await res.json();
+    if (data.error) return;
+    if (data.current_odometer) document.getElementById('m-odometer').value = data.current_odometer;
+    if (data.oil_change) {
+      document.getElementById('m-oil-last').value     = data.oil_change.last_service_odometer || '';
+      document.getElementById('m-oil-interval').value = data.oil_change.interval_miles || '';
+    }
+    if (data.tire_rotation) {
+      document.getElementById('m-tire-last').value     = data.tire_rotation.last_service_odometer || '';
+      document.getElementById('m-tire-interval').value = data.tire_rotation.interval_miles || '';
+    }
+    if (data.air_filter) {
+      document.getElementById('m-air-last').value     = data.air_filter.last_service_odometer || '';
+      document.getElementById('m-air-interval').value = data.air_filter.interval_miles || '';
+    }
+  } catch(e) { /* runner offline */ }
+}
+
+async function saveMaintenance() {
+  const payload = {
+    current_odometer: document.getElementById('m-odometer').value,
+    oil_change: {
+      last_service_odometer: document.getElementById('m-oil-last').value,
+      interval_miles:        document.getElementById('m-oil-interval').value
+    },
+    tire_rotation: {
+      last_service_odometer: document.getElementById('m-tire-last').value,
+      interval_miles:        document.getElementById('m-tire-interval').value
+    },
+    air_filter: {
+      last_service_odometer: document.getElementById('m-air-last').value,
+      interval_miles:        document.getElementById('m-air-interval').value
+    }
+  };
+  try {
+    const res  = await fetch(RUNNER_URL + '/maintenance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    const st   = document.getElementById('m-status');
+    if (data.ok) {
+      st.textContent = '✅ Saved successfully!';
+      st.style.color = '#16a34a';
+    } else {
+      st.textContent = '❌ Error: ' + (data.error || 'Unknown');
+      st.style.color = '#dc2626';
+    }
+    st.style.display = 'block';
+    setTimeout(() => st.style.display = 'none', 3000);
+  } catch(e) {
+    const st = document.getElementById('m-status');
+    st.textContent = '❌ Cannot reach script runner';
+    st.style.color = '#dc2626';
+    st.style.display = 'block';
+    setTimeout(() => st.style.display = 'none', 3000);
+  }
+}
+
+loadMaintenance();
 </script>
 
 </body>
