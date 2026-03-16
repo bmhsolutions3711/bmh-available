@@ -169,7 +169,10 @@
     <h1>BMH Solutions LLC — Business Dashboard</h1>
     <p>MC: 1700226 &nbsp;·&nbsp; DOT: 04349026 &nbsp;·&nbsp; Hotshot Trucking</p>
   </div>
-  <div class="updated">Last updated<br>03/15/2026 08:35 PM</div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+    <div class="updated">Last updated<br>03/15/2026 08:40 PM</div>
+    <button onclick="syncDashboard(this)" style="background:#1F4E79;color:white;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">🔄 Sync Dashboard</button>
+  </div>
 </div>
 
 <div class="container">
@@ -643,6 +646,30 @@ function showCat(cat) {
     ).join('');
   }
   detail.style.display = 'block';
+}
+
+// Sync dashboard button in header
+async function syncDashboard(btn) {
+  const orig = btn.textContent;
+  btn.textContent = '⏳ Syncing...';
+  btn.disabled = true;
+  btn.style.background = '#ca8a04';
+  try {
+    const res  = await fetch('http://100.122.71.30:9877/run/sync-dashboard');
+    const data = await res.json();
+    if (data.error) { btn.textContent = '❌ Error'; btn.style.background='#dc2626'; setTimeout(()=>{btn.textContent=orig;btn.style.background='#1F4E79';btn.disabled=false;},3000); return; }
+    // Poll for completion
+    while(true) {
+      await new Promise(r=>setTimeout(r,1500));
+      const jr = await fetch('http://100.122.71.30:9877/job/'+data.job_id);
+      const jd = await jr.json();
+      if(jd.status==='done') { btn.textContent='✅ Done!'; btn.style.background='#16a34a'; setTimeout(()=>{btn.textContent=orig;btn.style.background='#1F4E79';btn.disabled=false;},3000); break; }
+      if(jd.status==='error') { btn.textContent='❌ Failed'; btn.style.background='#dc2626'; setTimeout(()=>{btn.textContent=orig;btn.style.background='#1F4E79';btn.disabled=false;},3000); break; }
+    }
+  } catch(e) {
+    btn.textContent='❌ Offline'; btn.style.background='#dc2626';
+    setTimeout(()=>{btn.textContent=orig;btn.style.background='#1F4E79';btn.disabled=false;},3000);
+  }
 }
 </script>
 
