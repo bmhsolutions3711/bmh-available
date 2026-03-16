@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>BMH Tasks</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy:      #0D1B2A;
+      --blue:      #1F4E79;
+      --cyan:      #00CFFF;
+      --steel:     #1E3A5F;
+      --steel2:    #162f4a;
+      --white:     #FFFFFF;
+      --gray:      #64748B;
+      --light:     #CBD5E1;
+      --biz:       #3B82F6;
+      --per:       #8B5CF6;
+      --spi:       #10B981;
+      --quick:     #F59E0B;
+      --done:      #475569;
+      --red:       #EF4444;
+      --weekly:    #3B82F6;
+      --quarterly: #F59E0B;
+      --annual:    #EF4444;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    body { font-family:'DM Sans',sans-serif; background:var(--navy); color:var(--white); min-height:100vh; }
+
+    /* ── Header ── */
+    .header { background:var(--steel); padding:12px 20px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(0,207,255,.2); position:sticky; top:0; z-index:100; }
+    .header h1 { font-size:16px; font-weight:700; }
+    .header h1 span { color:var(--cyan); }
+    .sync-dot { font-size:10px; color:var(--gray); font-family:'DM Mono',monospace; }
+    .sync-dot.saved  { color:#10B981; }
+    .sync-dot.saving { color:var(--quick); }
+
+    /* ── Nav ── */
+    .nav-bar { background:var(--steel); padding:0 20px 10px; display:flex; gap:8px; border-bottom:1px solid rgba(255,255,255,.06); }
+    .nav-btn { flex:1; padding:7px 4px; border-radius:7px; border:1.5px solid var(--blue); background:transparent; color:var(--light); font-size:10px; font-weight:600; font-family:'DM Sans',sans-serif; cursor:pointer; text-decoration:none; text-align:center; white-space:nowrap; }
+    .nav-btn.active { background:var(--blue); color:var(--white); }
+
+    /* ── Main Layout ── */
+    .main { padding:16px 20px; }
+
+    /* ── Quick Inbox (full width) ── */
+    .quick-card {
+      background:var(--steel);
+      border-radius:12px;
+      padding:14px 16px;
+      margin-bottom:16px;
+      border:1px solid rgba(245,158,11,.3);
+    }
+    .quick-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .quick-title { font-size:11px; font-weight:700; color:var(--quick); text-transform:uppercase; letter-spacing:.1em; }
+    .voice-q { background:rgba(245,158,11,.12); border:1px solid var(--quick); border-radius:16px; padding:4px 12px; color:var(--quick); font-size:11px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .15s; }
+    .voice-q.listening { background:var(--red); border-color:var(--red); color:#fff; animation:pulse 1s infinite; }
+    .quick-input { width:100%; background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:10px 12px; color:var(--white); font-size:13px; font-family:'DM Sans',sans-serif; outline:none; margin-bottom:8px; }
+    .quick-input:focus { border-color:var(--quick); }
+    .quick-input::placeholder { color:rgba(255,255,255,.2); }
+    #quickList .task-item { padding:7px 0; border-bottom:1px solid rgba(255,255,255,.05); }
+    #quickList .task-item:last-child { border-bottom:none; }
+
+    /* ── 3-Column Row ── */
+    .cat-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; align-items:start; }
+
+    /* ── Category Column ── */
+    .cat-col { background:var(--steel); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; }
+
+    .cat-col-header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 14px;
+      border-bottom:2px solid;
+    }
+    .cat-col.biz .cat-col-header { border-color:var(--biz); }
+    .cat-col.per .cat-col-header { border-color:var(--per); }
+    .cat-col.spi .cat-col-header { border-color:var(--spi); }
+
+    .cat-col-title { font-size:13px; font-weight:700; display:flex; align-items:center; gap:7px; }
+    .cat-col.biz .cat-col-title { color:var(--biz); }
+    .cat-col.per .cat-col-title { color:var(--per); }
+    .cat-col.spi .cat-col-title { color:var(--spi); }
+
+    .cat-count-pill { font-size:10px; font-family:'DM Mono',monospace; background:rgba(255,255,255,.07); border-radius:10px; padding:2px 7px; color:var(--gray); }
+
+    .voice-cat { border-radius:14px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer; border:1px solid; font-family:'DM Sans',sans-serif; transition:all .15s; }
+    .cat-col.biz .voice-cat { color:var(--biz); border-color:var(--biz); background:rgba(59,130,246,.08); }
+    .cat-col.per .voice-cat { color:var(--per); border-color:var(--per); background:rgba(139,92,246,.08); }
+    .cat-col.spi .voice-cat { color:var(--spi); border-color:var(--spi); background:rgba(16,185,129,.08); }
+    .voice-cat.listening { background:var(--red)!important; border-color:var(--red)!important; color:#fff!important; animation:pulse 1s infinite; }
+
+    /* ── Timeframe Groups inside column ── */
+    .tf-group { border-bottom:1px solid rgba(255,255,255,.04); }
+    .tf-group:last-child { border-bottom:none; }
+    .tf-group-label {
+      display:flex; align-items:center; gap:6px;
+      padding:7px 14px 5px;
+      font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.08em;
+      color:var(--gray);
+    }
+    .tf-group-label .tf-dot { width:6px; height:6px; border-radius:50%; }
+    .tf-dot.weekly    { background:var(--weekly); }
+    .tf-dot.quarterly { background:var(--quarterly); }
+    .tf-dot.annual    { background:var(--annual); }
+
+    /* ── Task Items ── */
+    .task-list { min-height:4px; }
+    .task-item {
+      display:flex; align-items:flex-start; gap:8px;
+      padding:8px 14px;
+      border-bottom:1px solid rgba(255,255,255,.03);
+      cursor:grab; transition:background .1s;
+    }
+    .task-item:last-child { border-bottom:none; }
+    .task-item:hover { background:rgba(255,255,255,.02); }
+    .drag-h { color:rgba(255,255,255,.13); font-size:12px; margin-top:2px; flex-shrink:0; }
+    .task-cb { width:16px; height:16px; border-radius:4px; border:1.5px solid rgba(255,255,255,.2); background:transparent; flex-shrink:0; cursor:pointer; appearance:none; -webkit-appearance:none; margin-top:2px; position:relative; transition:all .15s; }
+    .task-cb:checked { background:var(--done); border-color:var(--done); }
+    .task-cb:checked::after { content:'✓'; position:absolute; top:-1px; left:2px; font-size:11px; color:#fff; font-weight:700; }
+    .task-body { flex:1; min-width:0; }
+    .task-text { font-size:12px; line-height:1.45; }
+    .task-text.done { color:var(--done); text-decoration:line-through; }
+    .task-date { font-size:9px; color:var(--gray); font-family:'DM Mono',monospace; margin-top:2px; }
+
+    /* ── Drop Zone ── */
+    .drop-zone { min-height:32px; border:1.5px dashed rgba(255,255,255,.07); border-radius:7px; margin:6px 14px; display:flex; align-items:center; justify-content:center; transition:all .15s; }
+    .drop-zone.over { border-color:var(--cyan); background:rgba(0,207,255,.04); }
+    .drop-zone-label { font-size:10px; color:rgba(255,255,255,.12); }
+
+    /* ── Add Task Row ── */
+    .add-row { display:flex; gap:6px; padding:8px 14px; border-top:1px solid rgba(255,255,255,.05); }
+    .add-input { flex:1; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.07); border-radius:7px; padding:7px 9px; color:var(--white); font-size:12px; font-family:'DM Sans',sans-serif; outline:none; }
+    .add-input:focus { border-color:rgba(255,255,255,.18); }
+    .add-input::placeholder { color:rgba(255,255,255,.16); }
+    .tf-select { background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.07); border-radius:7px; padding:7px 5px; color:var(--light); font-size:11px; font-family:'DM Sans',sans-serif; outline:none; cursor:pointer; }
+
+    /* ── Finished Per-Category ── */
+    .fin-section { border-top:1px solid rgba(255,255,255,.05); }
+    .fin-header { display:flex; align-items:center; justify-content:space-between; padding:8px 14px; cursor:pointer; user-select:none; }
+    .fin-header:hover { background:rgba(255,255,255,.02); }
+    .fin-title { font-size:10px; font-weight:700; color:var(--done); }
+    .fin-cnt { font-family:'DM Mono',monospace; font-size:9px; }
+    .fin-chev { color:var(--done); font-size:10px; transition:transform .2s; }
+    .fin-chev.open { transform:rotate(180deg); }
+    .fin-body { display:none; }
+    .fin-body.open { display:block; }
+
+    /* ── Empty ── */
+    .empty-state { padding:12px 14px; text-align:center; color:rgba(255,255,255,.12); font-size:11px; }
+
+    /* ── Toast ── */
+    .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--steel); border:1px solid rgba(0,207,255,.3); border-radius:10px; padding:9px 18px; font-size:12px; font-weight:500; color:var(--cyan); transition:transform .3s cubic-bezier(.34,1.56,.64,1); z-index:999; white-space:nowrap; }
+    .toast.show { transform:translateX(-50%) translateY(0); }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+    ::-webkit-scrollbar { width:3px; } ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.1); border-radius:2px; }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>BMH <span>Tasks</span></h1>
+  <span class="sync-dot" id="syncStatus">connecting...</span>
+</div>
+
+<!-- Nav -->
+<div class="nav-bar">
+  <a href="dashboard.html" class="nav-btn">📊 Dash</a>
+  <a href="planning.html" class="nav-btn">📅 Plan</a>
+  <a href="briefing.html" class="nav-btn">☀️ Brief</a>
+  <a href="operations.html" class="nav-btn">⚙️ Ops</a>
+  <a href="organization.html" class="nav-btn active">✅ Tasks</a>
+</div>
+
+<div class="main">
+
+  <!-- Quick Inbox — full width -->
+  <div class="quick-card">
+    <div class="quick-header">
+      <span class="quick-title">⚡ Quick Inbox</span>
+      <button class="voice-q" id="voiceQ" onclick="startVoice('quick')">🎤 Voice</button>
+    </div>
+    <input class="quick-input" id="quickInput" placeholder="Type a quick thought and press Enter..." onkeydown="quickKey(event)">
+    <div id="quickList"></div>
+  </div>
+
+  <!-- 3-Column Row -->
+  <div class="cat-row">
+
+    <!-- Business -->
+    <div class="cat-col biz">
+      <div class="cat-col-header">
+        <div class="cat-col-title">💼 Business <span class="cat-count-pill" id="cnt-business">0</span></div>
+        <button class="voice-cat" id="vc-business" onclick="startVoice('business')">🎤 Add</button>
+      </div>
+      <div id="groups-business"></div>
+      <div class="drop-zone" id="drop-business" ondragover="dragOver(event)" ondrop="drop(event,'business')" ondragleave="dragLeave(event)">
+        <span class="drop-zone-label">drag here</span>
+      </div>
+      <div class="add-row">
+        <input class="add-input" id="inp-business" placeholder="Add task..." onkeydown="catKey(event,'business')">
+        <select class="tf-select" id="tf-business">
+          <option value="weekly" selected>Weekly</option>
+          <option value="quarterly">Quarterly</option>
+          <option value="annual">Annual</option>
+        </select>
+      </div>
+      <div class="fin-section">
+        <div class="fin-header" onclick="toggleFin('business')">
+          <span class="fin-title">✅ Finished <span id="fin-cnt-business" class="fin-cnt">(0)</span></span>
+          <span class="fin-chev" id="fin-chev-business">▼</span>
+        </div>
+        <div class="fin-body" id="fin-body-business"><div id="fin-list-business"></div></div>
+      </div>
+    </div>
+
+    <!-- Personal -->
+    <div class="cat-col per">
+      <div class="cat-col-header">
+        <div class="cat-col-title">👤 Personal <span class="cat-count-pill" id="cnt-personal">0</span></div>
+        <button class="voice-cat" id="vc-personal" onclick="startVoice('personal')">🎤 Add</button>
+      </div>
+      <div id="groups-personal"></div>
+      <div class="drop-zone" id="drop-personal" ondragover="dragOver(event)" ondrop="drop(event,'personal')" ondragleave="dragLeave(event)">
+        <span class="drop-zone-label">drag here</span>
+      </div>
+      <div class="add-row">
+        <input class="add-input" id="inp-personal" placeholder="Add task..." onkeydown="catKey(event,'personal')">
+        <select class="tf-select" id="tf-personal">
+          <option value="weekly" selected>Weekly</option>
+          <option value="quarterly">Quarterly</option>
+          <option value="annual">Annual</option>
+        </select>
+      </div>
+      <div class="fin-section">
+        <div class="fin-header" onclick="toggleFin('personal')">
+          <span class="fin-title">✅ Finished <span id="fin-cnt-personal" class="fin-cnt">(0)</span></span>
+          <span class="fin-chev" id="fin-chev-personal">▼</span>
+        </div>
+        <div class="fin-body" id="fin-body-personal"><div id="fin-list-personal"></div></div>
+      </div>
+    </div>
+
+    <!-- Spiritual -->
+    <div class="cat-col spi">
+      <div class="cat-col-header">
+        <div class="cat-col-title">🙏 Spiritual <span class="cat-count-pill" id="cnt-spiritual">0</span></div>
+        <button class="voice-cat" id="vc-spiritual" onclick="startVoice('spiritual')">🎤 Add</button>
+      </div>
+      <div id="groups-spiritual"></div>
+      <div class="drop-zone" id="drop-spiritual" ondragover="dragOver(event)" ondrop="drop(event,'spiritual')" ondragleave="dragLeave(event)">
+        <span class="drop-zone-label">drag here</span>
+      </div>
+      <div class="add-row">
+        <input class="add-input" id="inp-spiritual" placeholder="Add task..." onkeydown="catKey(event,'spiritual')">
+        <select class="tf-select" id="tf-spiritual">
+          <option value="weekly" selected>Weekly</option>
+          <option value="quarterly">Quarterly</option>
+          <option value="annual">Annual</option>
+        </select>
+      </div>
+      <div class="fin-section">
+        <div class="fin-header" onclick="toggleFin('spiritual')">
+          <span class="fin-title">✅ Finished <span id="fin-cnt-spiritual" class="fin-cnt">(0)</span></span>
+          <span class="fin-chev" id="fin-chev-spiritual">▼</span>
+        </div>
+        <div class="fin-body" id="fin-body-spiritual"><div id="fin-list-spiritual"></div></div>
+      </div>
+    </div>
+
+  </div><!-- /cat-row -->
+
+
+
+</div><!-- /main -->
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+  import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getFirestore, doc, onSnapshot, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  const app = initializeApp({
+    apiKey: "AIzaSyC4G8R3BfaOaaaJI4DoVvk7WX2NTPtluJg",
+    authDomain: "bmh-tasks.firebaseapp.com",
+    projectId: "bmh-tasks",
+    storageBucket: "bmh-tasks.appspot.com",
+    messagingSenderId: "128718242960",
+    appId: "1:128718242960:web:49b3e1db1c3b76b0674415"
+  });
+  const db  = getFirestore(app);
+  const REF = doc(db, 'tasks', 'bmh');
+
+  const TIMEFRAMES = ['weekly','quarterly','annual'];
+  const TF_LABELS  = { weekly:'Weekly', quarterly:'Quarterly', annual:'Annual' };
+
+  let tasks = { quick:[], business:[], personal:[], spiritual:[] };
+  let saveTimer = null;
+  let draggedTask = null;
+  let draggedFrom = null;
+  let recognition = null;
+
+
+  // ── Sync ──
+  function setSync(msg, cls='') {
+    const el = document.getElementById('syncStatus');
+    el.textContent = msg; el.className = 'sync-dot ' + cls;
+  }
+
+  onSnapshot(REF, snap => {
+    if (snap.exists()) {
+      const d = snap.data();
+      tasks = { quick:d.quick||[], business:d.business||[], personal:d.personal||[], spiritual:d.spiritual||[] };
+    }
+    renderAll(); setSync('● synced','saved');
+  }, err => { setSync('● offline'); console.error(err); });
+
+  function save() {
+    setSync('saving...','saving');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(async () => {
+      try { await setDoc(REF, tasks); setSync('● synced','saved'); }
+      catch(e) { setSync('● save failed'); }
+    }, 800);
+  }
+
+  // ── Task Ops ──
+  function addTask(cat, text, tf) {
+    if (!text.trim()) return;
+    tasks[cat].unshift({ id:Date.now(), text:text.trim(), done:false, timeframe:tf||'weekly', created:new Date().toLocaleDateString('en-US',{month:'2-digit',day:'2-digit'}) });
+    renderAll(); save();
+  }
+
+  function toggleDone(cat, id) {
+    const t = tasks[cat].find(t=>t.id===id);
+    if (t) { t.done=!t.done; renderAll(); save(); }
+  }
+
+  // ── Render ──
+  function renderAll() {
+    renderQuick();
+    ['business','personal','spiritual'].forEach(renderCat);
+    renderFinished();
+    updateCounts();
+  }
+
+  function renderQuick() {
+    const el = document.getElementById('quickList');
+    const list = tasks.quick.filter(t=>!t.done);
+    if (!list.length) { el.innerHTML='<div class="empty-state">No quick tasks</div>'; return; }
+    el.innerHTML = list.map(t => taskHTML('quick', t, false)).join('');
+  }
+
+  function renderCat(cat) {
+    const el = document.getElementById('groups-' + cat);
+    const active = tasks[cat].filter(t=>!t.done);
+    if (!active.length) { el.innerHTML='<div class="empty-state">No tasks yet</div>'; return; }
+
+    let html = '';
+    TIMEFRAMES.forEach(tf => {
+      const group = active.filter(t=>(t.timeframe||'weekly')===tf);
+      if (!group.length) return;
+      html += `
+        <div class="tf-group">
+          <div class="tf-group-label">
+            <span class="tf-dot ${tf}"></span>${TF_LABELS[tf]}
+          </div>
+          <div class="task-list">
+            ${group.map(t=>taskHTML(cat,t,true)).join('')}
+          </div>
+        </div>`;
+    });
+    el.innerHTML = html || '<div class="empty-state">No tasks yet</div>';
+  }
+
+  function taskHTML(cat, t, showDate) {
+    return `<div class="task-item" draggable="true" ondragstart="window._ds(event,'${cat}',${t.id})">
+      <span class="drag-h">⠿</span>
+      <input type="checkbox" class="task-cb" onchange="window._td('${cat}',${t.id})">
+      <div class="task-body">
+        <div class="task-text">${esc(t.text)}</div>
+        ${showDate ? `<div class="task-date">${t.created||''}</div>` : ''}
+      </div>
+    </div>`;
+  }
+
+  function renderFinished() {
+    ['business','personal','spiritual'].forEach(cat => {
+      const el  = document.getElementById('fin-list-' + cat);
+      const cnt = document.getElementById('fin-cnt-' + cat);
+      if (!el) return;
+      const done = tasks[cat].filter(t=>t.done);
+      cnt.textContent = `(${done.length})`;
+      el.innerHTML = done.length ? done.map(t=>`
+        <div class="task-item" style="opacity:.4">
+          <span class="drag-h">⠿</span>
+          <input type="checkbox" class="task-cb" checked onchange="window._td('${cat}',${t.id})">
+          <div class="task-body">
+            <div class="task-text done">${esc(t.text)}</div>
+            <div class="task-date">${t.created||''}</div>
+          </div>
+        </div>`).join('')
+        : '<div class="empty-state">Nothing completed yet</div>';
+    });
+  }
+
+  function updateCounts() {
+    ['business','personal','spiritual'].forEach(cat => {
+      const n = tasks[cat].filter(t=>!t.done).length;
+      const el = document.getElementById('cnt-'+cat);
+      if (el) el.textContent = n;
+    });
+  }
+
+  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  // ── Inputs ──
+  window.quickKey = (e) => {
+    if (e.key==='Enter') {
+      addTask('quick', document.getElementById('quickInput').value, 'quick');
+      document.getElementById('quickInput').value='';
+    }
+  };
+  window.catKey = (e, cat) => {
+    if (e.key==='Enter') {
+      const inp = document.getElementById('inp-'+cat);
+      addTask(cat, inp.value, document.getElementById('tf-'+cat).value);
+      inp.value='';
+    }
+  };
+
+  // ── Finished Toggle per category ──
+  const finState = { business:false, personal:false, spiritual:false };
+  window.toggleFin = (cat) => {
+    finState[cat] = !finState[cat];
+    document.getElementById('fin-body-' + cat).classList.toggle('open', finState[cat]);
+    document.getElementById('fin-chev-' + cat).classList.toggle('open', finState[cat]);
+  };
+
+  // ── Drag & Drop ──
+  window._ds = (e,cat,id) => { draggedTask=tasks[cat].find(t=>t.id===id); draggedFrom=cat; e.dataTransfer.effectAllowed='move'; };
+  window.dragOver  = (e) => { e.preventDefault(); e.currentTarget.classList.add('over'); };
+  window.dragLeave = (e) => { e.currentTarget.classList.remove('over'); };
+  window.drop = (e, targetCat) => {
+    e.preventDefault(); e.currentTarget.classList.remove('over');
+    if (!draggedTask || draggedFrom===targetCat) return;
+    tasks[draggedFrom] = tasks[draggedFrom].filter(t=>t.id!==draggedTask.id);
+    if (draggedFrom==='quick' && targetCat!=='quick') {
+      draggedTask.timeframe = 'weekly';
+    }
+    tasks[targetCat].unshift(draggedTask);
+    renderAll(); save(); showToast('Moved to '+targetCat);
+    draggedTask=null; draggedFrom=null;
+  };
+
+  // ── Voice ──
+  window.startVoice = (cat) => {
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if (!SR) { showToast('Voice not supported here'); return; }
+    if (recognition) { recognition.stop(); recognition=null; return; }
+    const btnId = cat==='quick' ? 'voiceQ' : 'vc-'+cat;
+    const btn = document.getElementById(btnId);
+    recognition=new SR(); recognition.lang='en-US'; recognition.interimResults=false;
+    btn.classList.add('listening'); btn.textContent='⏹ Stop';
+    showToast('Listening...',8000);
+    recognition.onresult=(e)=>{
+      const text=e.results[0][0].transcript;
+      const tf = cat!=='quick' ? document.getElementById('tf-'+cat)?.value||'weekly' : 'quick';
+      addTask(cat,text,tf); showToast('Added: '+text);
+    };
+    recognition.onerror=()=>showToast('Could not hear — try again');
+    recognition.onend=()=>{ btn.classList.remove('listening'); btn.textContent=cat==='quick'?'🎤 Voice':'🎤 Add'; recognition=null; };
+    recognition.start();
+  };
+
+  window._td = toggleDone;
+
+  // ── Toast ──
+  let toastTimer;
+  window.showToast = (msg,dur=2500) => {
+    const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),dur);
+  };
+</script>
+</body>
+</html>
