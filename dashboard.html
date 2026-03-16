@@ -170,7 +170,7 @@
     <p>MC: 1700226 &nbsp;·&nbsp; DOT: 04349026 &nbsp;·&nbsp; Hotshot Trucking</p>
   </div>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
-    <div class="updated">Last updated<br>03/15/2026 08:58 PM</div>
+    <div class="updated">Last updated<br>03/15/2026 09:05 PM</div>
     <button onclick="syncDashboard(this)" style="background:#1F4E79;color:white;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">🔄 Sync Dashboard</button>
   </div>
 </div>
@@ -465,6 +465,14 @@
     </div>
   </div>
 
+  <!-- Gas / Lodging / Food by Month Chart -->
+  <div class="card" style="margin-bottom:24px">
+    <h2>⛽ Key Expense Categories by Month (2026)</h2>
+    <div class="chart-wrap">
+      <canvas id="expCatMonthChart"></canvas>
+    </div>
+  </div>
+
 </div>
 
 <div class="footer">
@@ -558,6 +566,53 @@ new Chart(document.getElementById('loadChart'), {
     scales: {
       y: {
         ticks: { stepSize: 1, font: { size: 11 } },
+        grid: { color: '#f3f4f6' }
+      },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// Gas / Lodging / Food by month
+new Chart(document.getElementById('expCatMonthChart'), {
+  type: 'bar',
+  data: {
+    labels: ["Jan", "Feb", "Mar"],
+    datasets: [
+      {
+        label: 'Gas',
+        data: [1882.13, 2806.49, 1090.32],
+        backgroundColor: '#ef4444',
+        borderRadius: 4,
+      },
+      {
+        label: 'Lodging',
+        data: [999.71, 1353.1699999999998, 890.0100000000001],
+        backgroundColor: '#f59e0b',
+        borderRadius: 4,
+      },
+      {
+        label: 'Food',
+        data: [397.12, 327.59999999999997, 712.1300000000001],
+        backgroundColor: '#10b981',
+        borderRadius: 4,
+      },
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top', labels: { font: { size: 11 } } },
+      tooltip: {
+        callbacks: {
+          label: ctx => ctx.dataset.label + ': $' + ctx.parsed.y.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0})
+        }
+      }
+    },
+    scales: {
+      y: {
+        ticks: { callback: v => '$' + v.toLocaleString(), font: { size: 11 } },
         grid: { color: '#f3f4f6' }
       },
       x: { grid: { display: false }, ticks: { font: { size: 11 } } }
