@@ -74,7 +74,12 @@
 <div class="content">
 
   <div class="section-title">🛰 Live US Radar</div>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <button id="btn-past" onclick="setRadarMode('past')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #00cfff;background:#00cfff;color:#0f172a;font-size:12px;font-weight:700;cursor:pointer">⏪ Past (2hr)</button>
+    <button id="btn-forecast" onclick="setRadarMode('forecast')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #334155;background:transparent;color:#94a3b8;font-size:12px;font-weight:700;cursor:pointer">⏩ Forecast (2hr)</button>
+  </div>
   <div id="radar-map" style="width:100%;height:500px;border-radius:12px;overflow:hidden;margin-bottom:8px;border:1px solid #334155"></div>
+  <div id="radar-label" style="font-size:11px;color:#64748b;text-align:center;margin-bottom:16px">Showing: Last 2 hours of actual radar</div>
 
   <div class="section-title">🌤 Regional Weather Hubs</div>
   <div class="weather-grid" id="weather-grid">
@@ -300,58 +305,91 @@ function toggleBriefing() {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 // ── Animated Radar (RainViewer) ───────────────────────────────────────────────
+let radarMap = null;
+let radarLayers = [];
+let radarTimer = null;
+let radarMode = 'past';
+let radarData = null;
+
 async function initRadar() {
-  const map = L.map('radar-map', {
+  radarMap = L.map('radar-map', {
     center: [39.5, -98.35],
     zoom: 4,
     zoomControl: true,
     attributionControl: true
   });
 
-  // Dark base tile
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '© OpenStreetMap © CARTO',
     subdomains: 'abcd',
     maxZoom: 19
-  }).addTo(map);
+  }).addTo(radarMap);
 
-  // Fetch RainViewer timestamps
   try {
-    const rv = await fetch('https://api.rainviewer.com/public/weather-maps.json').then(r => r.json());
-    const frames = rv.radar.past;
-    if (!frames || !frames.length) return;
-
-    let currentIdx = 0;
-    let layers = [];
-    let animTimer = null;
-
-    // Pre-build all frame layers
-    frames.forEach(frame => {
-      const layer = L.tileLayer(
-        `https://tilecache.rainviewer.com${frame.path}/256/{z}/{x}/{y}/2/1_1.png`,
-        { opacity: 0, attribution: 'RainViewer' }
-      );
-      layer.addTo(map);
-      layers.push(layer);
-    });
-
-    function showFrame(idx) {
-      layers.forEach((l, i) => l.setOpacity(i === idx ? 0.7 : 0));
-      currentIdx = idx;
-    }
-
-    function animate() {
-      showFrame(currentIdx);
-      currentIdx = (currentIdx + 1) % layers.length;
-    }
-
-    // Show most recent frame first, then animate
-    showFrame(frames.length - 1);
-    animTimer = setInterval(animate, 500);
-
+    radarData = await fetch('https://api.rainviewer.com/public/weather-maps.json').then(r => r.json());
+    setRadarMode('past');
   } catch(e) {
     console.warn('RainViewer load failed', e);
   }
+}
+
+function setRadarMode(mode) {
+  radarMode = mode;
+
+  // Update button styles
+  const btnPast = document.getElementById('btn-past');
+  const btnFore = document.getElementById('btn-forecast');
+  const label   = document.getElementById('radar-label');
+
+  if (mode === 'past') {
+    btnPast.style.background = '#00cfff'; btnPast.style.color = '#0f172a'; btnPast.style.borderColor = '#00cfff';
+    btnFore.style.background = 'transparent'; btnFore.style.color = '#94a3b8'; btnFore.style.borderColor = '#334155';
+    label.textContent = 'Showing: Last 2 hours of actual radar';
+  } else {
+    btnFore.style.background = '#00cfff'; btnFore.style.color = '#0f172a'; btnFore.style.borderColor = '#00cfff';
+    btnPast.style.background = 'transparent'; btnPast.style.color = '#94a3b8'; btnPast.style.borderColor = '#334155';
+    label.textContent = 'Showing: Next 2 hours forecast (RainViewer nowcast)';
+  }
+
+  // Clear existing layers and timer
+  clearInterval(radarTimer);
+  radarLayers.forEach(l => radarMap.removeLayer(l));
+  radarLayers = [];
+
+  if (!radarData) return;
+
+  const frames = mode === 'past'
+    ? (radarData.radar.past || [])
+    : (radarData.radar.nowcast || []);
+
+  if (!frames.length) {
+    document.getElementById('radar-label').textContent = 'Forecast data not available yet — try again shortly';
+    return;
+  }
+
+  let currentIdx = 0;
+
+  frames.forEach(frame => {
+    const layer = L.tileLayer(
+      `https://tilecache.rainviewer.com${frame.path}/256/{z}/{x}/{y}/2/1_1.png`,
+      { opacity: 0, attribution: 'RainViewer' }
+    );
+    layer.addTo(radarMap);
+    radarLayers.push(layer);
+  });
+
+  function showFrame(idx) {
+    radarLayers.forEach((l, i) => l.setOpacity(i === idx ? 0.7 : 0));
+    currentIdx = idx;
+  }
+
+  function animate() {
+    showFrame(currentIdx);
+    currentIdx = (currentIdx + 1) % radarLayers.length;
+  }
+
+  showFrame(mode === 'past' ? frames.length - 1 : 0);
+  radarTimer = setInterval(animate, 500);
 }
 
 loadWeather();
