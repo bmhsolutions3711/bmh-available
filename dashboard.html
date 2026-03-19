@@ -170,7 +170,7 @@
     <p>MC: 1700226 &nbsp;·&nbsp; DOT: 04349026 &nbsp;·&nbsp; Hotshot Trucking</p>
   </div>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
-    <div class="updated">Last updated<br>03/18/2026 11:47 PM</div>
+    <div class="updated">Last updated<br>03/18/2026 11:49 PM</div>
     <button onclick="syncDashboard(this)" style="background:#1F4E79;color:white;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">🔄 Sync Dashboard</button>
   </div>
 </div>
@@ -712,13 +712,13 @@ async function syncDashboard(btn) {
   btn.disabled = true;
   btn.style.background = '#ca8a04';
   try {
-    const res  = await fetch('http://100.122.71.30:9877/run/sync-dashboard');
+    const res  = await fetch('http://100.118.22.93:9877/run/sync-dashboard');
     const data = await res.json();
     if (data.error) { btn.textContent = '❌ Error'; btn.style.background='#dc2626'; setTimeout(()=>{btn.textContent=orig;btn.style.background='#1F4E79';btn.disabled=false;},3000); return; }
     // Poll for completion
     while(true) {
       await new Promise(r=>setTimeout(r,1500));
-      const jr = await fetch('http://100.122.71.30:9877/job/'+data.job_id);
+      const jr = await fetch('http://100.118.22.93:9877/job/'+data.job_id);
       const jd = await jr.json();
       if(jd.status==='done') { btn.textContent='✅ Done!'; btn.style.background='#16a34a'; setTimeout(()=>{btn.textContent=orig;btn.style.background='#1F4E79';btn.disabled=false;},3000); break; }
       if(jd.status==='error') { btn.textContent='❌ Failed'; btn.style.background='#dc2626'; setTimeout(()=>{btn.textContent=orig;btn.style.background='#1F4E79';btn.disabled=false;},3000); break; }
