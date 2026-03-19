@@ -60,7 +60,7 @@
 <div class="header">
   <div>
     <h1>☀️ BMH Morning Briefing</h1>
-    <div class="date">Wednesday, March 18, 2026</div>
+    <div class="date">Thursday, March 19, 2026</div>
   </div>
   <button class="play-btn" id="play-btn" onclick="toggleBriefing()">▶ Play Briefing</button>
 </div>
@@ -138,21 +138,24 @@ async function loadWeather() {
       const wind = Math.round(cur.wind.speed * 2.237) + ' mph';
       const humid = cur.main.humidity + '%';
 
-      // Build 5-day forecast (noon readings)
-      const seen = new Set();
-      const days = [];
+      // Build 5-day forecast — scan ALL readings per day for true hi/lo
+      const dayMap = {};
+      const today  = dayAbbr(Math.floor(Date.now()/1000));
       for (const item of fore.list) {
         const d = dayAbbr(item.dt);
-        if (!seen.has(d) && days.length < 5) {
-          seen.add(d);
-          days.push({
-            day: d,
-            icon: wxIcon(item.weather[0].main),
-            hi: fmtTemp(item.main.temp_max),
-            lo: fmtTemp(item.main.temp_min)
-          });
-        }
+        if (d === today) continue;
+        if (!dayMap[d]) dayMap[d] = { temps: [], icons: [] };
+        dayMap[d].temps.push(item.main.temp);
+        dayMap[d].icons.push(item.weather[0].main);
       }
+      const days = Object.entries(dayMap).slice(0, 5).map(([d, v]) => {
+        const hi  = Math.max(...v.temps);
+        const lo  = Math.min(...v.temps);
+        const freq = {};
+        v.icons.forEach(i => freq[i] = (freq[i]||0) + 1);
+        const dominant = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0][0];
+        return { day: d, icon: wxIcon(dominant), hi: fmtTemp(hi), lo: fmtTemp(lo) };
+      });
 
       weatherData[hub.name] = { temp, desc, wind, humid, icon, days };
 
