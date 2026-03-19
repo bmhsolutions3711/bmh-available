@@ -285,6 +285,21 @@ async function checkRunner() {
 }
 checkRunner();
 
+// Auto-trigger sync if redirected from dashboard
+if (new URLSearchParams(window.location.search).get('sync') === '1') {
+  setTimeout(() => {
+    const btn = document.querySelector('.script-btn');
+    // find the Sync Dashboard button specifically
+    document.querySelectorAll('.script-btn').forEach(b => {
+      if (b.textContent.includes('Sync Dashboard')) {
+        logMsg('▶ Auto-triggered sync from Dashboard button...
+');
+        runScript('sync-dashboard', b);
+      }
+    });
+  }, 800);
+}
+
 function logMsg(msg) {
   const log = document.getElementById('script-log');
   log.classList.add('visible');
