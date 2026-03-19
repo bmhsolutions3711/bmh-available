@@ -103,6 +103,50 @@
       transition: background 0.2s;
     }
     .btn:hover { background: #163d5e; }
+    .contact-btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .contact-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 12px 10px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .contact-btn.call  { background: #1F4E79; color: white; }
+    .contact-btn.call:hover  { background: #163d5e; }
+    .contact-btn.email { background: #f0f4f8; color: #1F4E79; border: 1.5px solid #1F4E79; }
+    .contact-btn.email:hover { background: #e2eaf2; }
+    .qr-section {
+      text-align: center;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .qr-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #9ca3af;
+      margin-bottom: 10px;
+    }
+    .qr-section img {
+      width: 150px;
+      height: 150px;
+      border: 3px solid #1F4E79;
+      border-radius: 8px;
+      padding: 6px;
+      background: white;
+    }
     .contact {
       text-align: center;
       font-size: 13px;
@@ -153,9 +197,20 @@
         Open in Google Maps
       </a>
 
+      <div class="contact-btns">
+        <a class="contact-btn call" href="tel:+16147043088">📞 Call Bryan</a>
+        <a class="contact-btn email" href="mailto:bmhsolutions3711@gmail.com">✉️ Email Bryan</a>
+      </div>
+
+      <div class="qr-section">
+        <div class="qr-label">Scan to Save Contact</div>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&format=png&ecc=M&color=1F4E79&bgcolor=ffffff&data=BEGIN%3AVCARD%0AVERSION%3A3.0%0AFN%3ABryan%20Hertzig%0AORG%3ABMH%20Solutions%20LLC%0ATITLE%3AOwner%2FOperator%0ATEL%3A%2B16147043088%0AEMAIL%3Abmhsolutions3711%40gmail.com%0AADR%3A%3B%3BPO%20Box%20563%3BGreen%3BOH%3B44232%3BUSA%0AURL%3Ahttps%3A%2F%2Fbmhsolutions3711.github.io%2Fbmh-available%2F%0AEND%3AVCARD"
+             alt="Scan to save contact" />
+      </div>
+
       <div class="contact">
-        <strong>Bryan Hertzig</strong> — 614-704-3088<br>
-        bmhsolutions3711@gmail.com
+        <strong>Bryan Hertzig</strong> &nbsp;·&nbsp; BMH Solutions LLC<br>
+        MC: 1700226 &nbsp;·&nbsp; DOT: 04349026
       </div>
       <div class="updated">Last updated: 03/18/2026 10:36 PM</div>
     </div>
