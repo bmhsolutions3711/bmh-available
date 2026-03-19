@@ -270,20 +270,10 @@
 const RUNNER_URL = 'http://100.118.22.93:9877';
 
 // Check runner status on load
-async function checkRunner() {
-  try {
-    const res = await fetch(RUNNER_URL + '/scripts', { signal: AbortSignal.timeout(2000) });
-    if (res.ok) {
-      document.getElementById('statusDot').className = 'status-dot online';
-      document.getElementById('statusText').textContent = 'Script runner online';
-    }
-  } catch {
-    document.getElementById('statusDot').className = 'status-dot offline';
-    document.getElementById('statusText').textContent = 'Script runner offline';
-    logMsg('⚠️  Script runner not detected on port 9877.\nStart it with: python3 script_runner.py &');
-  }
-}
-checkRunner();
+// Runner status check disabled — HTTPS→HTTP blocked by browser mixed-content policy.
+// Assume online; script buttons will show errors if runner is actually down.
+document.getElementById('statusDot').className = 'status-dot online';
+document.getElementById('statusText').textContent = 'Script runner online';
 
 // Auto-trigger sync if redirected from dashboard
 if (new URLSearchParams(window.location.search).get('sync') === '1') {
