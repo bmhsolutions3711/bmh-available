@@ -170,7 +170,7 @@
     <p>MC: 1700226 &nbsp;·&nbsp; DOT: 04349026 &nbsp;·&nbsp; Hotshot Trucking</p>
   </div>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
-    <div class="updated">Last updated<br>03/18/2026 08:44 PM</div>
+    <div class="updated">Last updated<br>03/18/2026 08:58 PM</div>
     <button onclick="syncDashboard(this)" style="background:#1F4E79;color:white;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">🔄 Sync Dashboard</button>
   </div>
 </div>
@@ -181,8 +181,8 @@
   <div class="kpi-grid">
     <div class="kpi">
       <div class="label">YTD Revenue</div>
-      <div class="value">$26,875</div>
-      <div class="sub" style="font-size:14px;font-weight:600;color:#374151">$8,050 month to date</div>
+      <div class="value">$27,225</div>
+      <div class="sub" style="font-size:14px;font-weight:600;color:#374151">$8,400 month to date</div>
     </div>
     <div class="kpi">
       <div class="label">YTD Expenses</div>
@@ -191,17 +191,17 @@
     </div>
     <div class="kpi">
       <div class="label">YTD Net Profit</div>
-      <div class="value" style="color:#dc2626">$-7,985</div>
+      <div class="value" style="color:#dc2626">$-7,635</div>
       <div class="sub">revenue minus expenses</div>
     </div>
     <div class="kpi">
       <div class="label">Open Invoices</div>
-      <div class="value" style="color:#1F4E79;font-size:28px">983 / $9,225</div>
+      <div class="value" style="color:#1F4E79;font-size:28px">984 / $9,575</div>
       <div class="sub">unpaid invoices</div>
     </div>
     <div class="kpi">
       <div class="label">Loads This Year</div>
-      <div class="value">31</div>
+      <div class="value">32</div>
       <div class="sub">processed loads</div>
     </div>
   </div>
@@ -217,7 +217,7 @@
 
   <!-- Open Invoices Table -->
   <div class="card" style="margin-bottom:24px">
-    <h2>Open Invoices <span class="badge badge-open">983 pending</span><span style="float:right;font-size:16px;font-weight:700;color:#92400e">$9,225.00 outstanding</span></h2>
+    <h2>Open Invoices <span class="badge badge-open">984 pending</span><span style="float:right;font-size:16px;font-weight:700;color:#92400e">$9,575.00 outstanding</span></h2>
     <div class="table-wrap">
       <table>
         <thead>
@@ -333,13 +333,13 @@
           <td><a href="http://localhost:9876/open?path=/Users/bryanhertzig/Library/CloudStorage/GoogleDrive-bmhsolutions3711@gmail.com/My%20Drive/BMH%20Solutions/Loads/2026/26_03_18%20-%20U6347138%20-%20USL%20(US%20Logistics)%20-%20GEORGETOWN,%20OH%20to%20MIDDLEFIELD,%20OH" target="_blank" title="/Users/bryanhertzig/Library/CloudStorage/GoogleDrive-bmhsolutions3711@gmail.com/My Drive/BMH Solutions/Loads/2026/26_03_18 - U6347138 - USL (US Logistics) - GEORGETOWN, OH to MIDDLEFIELD, OH" style="color:#1F4E79;font-weight:600">📁 View</a></td>
         </tr>
         <tr>
-          <td></td>
-          <td>Unknown</td>
-          <td>,  → , </td>
-          <td></td>
-          <td></td>
-          <td>$0.00</td>
-          <td>—</td>
+          <td>U6347138</td>
+          <td>USL (US Logistics)</td>
+          <td>GEORGETOWN, OH → MIDDLEFIELD, OH</td>
+          <td>03-19-2026</td>
+          <td>03-20-2026</td>
+          <td>$350.00</td>
+          <td><a href="http://localhost:9876/open?path=/Users/bryanhertzig/Library/CloudStorage/GoogleDrive-bmhsolutions3711@gmail.com/My%20Drive/BMH%20Solutions/Loads/2026/26_03_18%20-%20U6347138%20-%20USL%20(US%20Logistics)%20-%20GEORGETOWN,%20OH%20to%20MIDDLEFIELD,%20OH" target="_blank" title="/Users/bryanhertzig/Library/CloudStorage/GoogleDrive-bmhsolutions3711@gmail.com/My Drive/BMH Solutions/Loads/2026/26_03_18 - U6347138 - USL (US Logistics) - GEORGETOWN, OH to MIDDLEFIELD, OH" style="color:#1F4E79;font-weight:600">📁 View</a></td>
         </tr>
         <tr>
           <td></td>
@@ -581,7 +581,7 @@ new Chart(document.getElementById('revenueChart'), {
     labels: ["Jan", "Feb", "Mar"],
     datasets: [{
       label: 'Revenue ($)',
-      data: [8900.0, 9925.0, 8050.0],
+      data: [8900.0, 9925.0, 8400.0],
       backgroundColor: NAVY,
       borderRadius: 6,
     }]
@@ -640,7 +640,7 @@ new Chart(document.getElementById('loadChart'), {
     labels: ["Jan", "Feb", "Mar"],
     datasets: [{
       label: 'Loads',
-      data: [10, 12, 9],
+      data: [10, 12, 10],
       borderColor: NAVY,
       backgroundColor: LIGHT,
       fill: true,
@@ -718,7 +718,7 @@ new Chart(document.getElementById('plChart'), {
     datasets: [
       {
         label: 'Revenue',
-        data: [8900.0, 9925.0, 8050.0],
+        data: [8900.0, 9925.0, 8400.0],
         backgroundColor: NAVY,
         borderRadius: 4,
       },
@@ -730,7 +730,7 @@ new Chart(document.getElementById('plChart'), {
       },
       {
         label: 'Net Profit',
-        data: [-4377.769999999997, -4629.319999999998, 1021.6599999999999],
+        data: [-4377.769999999997, -4629.319999999998, 1371.6599999999999],
         backgroundColor: '#16a34a',
         borderRadius: 4,
       }
