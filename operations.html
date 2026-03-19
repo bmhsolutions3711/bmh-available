@@ -10,6 +10,7 @@
     .header { background: #1F4E79; color: white; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; }
     .header h1 { font-size: 20px; font-weight: 700; }
     .header .sub { font-size: 13px; opacity: 0.7; margin-top: 2px; }
+
     .nav-buttons { display: flex; gap: 12px; padding: 20px 32px 0; }
     .nav-btn { flex: 1; padding: 12px 24px; border-radius: 8px; font-size: 13px; font-weight: 600;
                text-decoration: none; border: 2px solid #1F4E79; cursor: pointer; transition: all .15s;
@@ -59,7 +60,6 @@
   <a href="planning.html" class="nav-btn inactive">📅 Planning</a>
   <a href="briefing.html" class="nav-btn inactive">☀️ Morning Briefing</a>
   <a href="operations.html" class="nav-btn active">⚙️ Operations</a>
-  <a href="https://bmhsolutions3711.github.io/bmh-available/" target="_blank" class="nav-btn inactive">📍 Available</a>
   <a href="organization.html" class="nav-btn inactive">✅ Tasks</a>
 </div>
 
@@ -267,7 +267,7 @@
 </div>
 
 <script>
-const RUNNER_URL = 'http://100.118.22.93:9877';
+const RUNNER_URL = 'https://100.118.22.93:9877';
 
 // Check runner status on load
 // Runner status check disabled - HTTPS to HTTP blocked by browser mixed-content policy.
@@ -282,8 +282,7 @@ if (new URLSearchParams(window.location.search).get('sync') === '1') {
     // find the Sync Dashboard button specifically
     document.querySelectorAll('.script-btn').forEach(b => {
       if (b.textContent.includes('Sync Dashboard')) {
-        logMsg('▶ Auto-triggered sync from Dashboard button...
-');
+        logMsg('Auto-triggered sync from Dashboard button...');
         runScript('sync-dashboard', b);
       }
     });
