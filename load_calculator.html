@@ -578,18 +578,21 @@
 
     rpmEl.textContent = '$' + rpm.toFixed(2) + '/mi';
 
-    if (rpm >= 2.50) {
+    // Verdict based on break-even (net profit vs expenses)
+    const margin = netProfit / totalExp * 100; // % above/below break-even
+
+    if (netProfit >= 0) {
       verdictEl.className = 'verdict go';
-      labelEl.textContent = '✅ Strong Load — Take It';
-      subEl.textContent   = `Net $${Math.round(netProfit).toLocaleString()} · ${miles} miles`;
-    } else if (rpm >= 1.75) {
+      labelEl.textContent = '✅ Take It — Covers Costs';
+      subEl.textContent   = `Net $${Math.round(netProfit).toLocaleString()} · $${rpm.toFixed(2)}/mi`;
+    } else if (netProfit >= -50) {
       verdictEl.className = 'verdict maybe';
-      labelEl.textContent = '🟡 Marginal — Negotiate Up';
-      subEl.textContent   = `Net $${Math.round(netProfit).toLocaleString()} · Could be better`;
+      labelEl.textContent = '🟡 Close — Try to Negotiate';
+      subEl.textContent   = `$${Math.round(Math.abs(netProfit)).toLocaleString()} short of break-even`;
     } else {
       verdictEl.className = 'verdict no';
-      labelEl.textContent = '🔴 Pass — Below Cost';
-      subEl.textContent   = `Net $${Math.round(netProfit).toLocaleString()} · Not worth it`;
+      labelEl.textContent = '🔴 Pass — Loses Money';
+      subEl.textContent   = `$${Math.round(Math.abs(netProfit)).toLocaleString()} below break-even`;
     }
 
     document.getElementById('results').classList.add('show');
