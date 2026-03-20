@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>BMH Load Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:     #0A0F1A;
+      --panel:  #111827;
+      --border: #1F2D40;
+      --blue:   #1F4E79;
+      --cyan:   #00D4FF;
+      --green:  #00E676;
+      --yellow: #FFD600;
+      --red:    #FF4444;
+      --white:  #F0F6FF;
+      --gray:   #4B5E74;
+      --light:  #8FA8C0;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+    body {
+      font-family: 'Barlow', sans-serif;
+      background: var(--bg);
+      color: var(--white);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, #1F4E79 0%, #0A0F1A 100%);
+      padding: 16px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .header h1 {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 22px; font-weight: 800; letter-spacing: .5px;
+      color: var(--white);
+    }
+    .header h1 span { color: var(--cyan); }
+    .header-sub { font-size: 11px; color: var(--light); margin-top: 2px; font-weight: 500; }
+
+    /* ── Voice Button ── */
+    .voice-hero {
+      background: var(--panel);
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+    }
+    .voice-big {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: var(--blue);
+      border: 2px solid var(--cyan);
+      color: var(--white);
+      font-size: 28px;
+      cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: all .2s;
+      margin-bottom: 8px;
+    }
+    .voice-big:hover { background: var(--cyan); color: var(--bg); transform: scale(1.05); }
+    .voice-big.listening { background: var(--red); border-color: var(--red); animation: pulse-ring 1s infinite; }
+    .voice-hint { font-size: 12px; color: var(--light); font-weight: 500; }
+    .voice-hint strong { color: var(--cyan); }
+    .voice-transcript {
+      margin-top: 10px; font-size: 13px; color: var(--yellow);
+      font-style: italic; min-height: 18px;
+    }
+
+    @keyframes pulse-ring {
+      0%   { box-shadow: 0 0 0 0 rgba(255,68,68,.5); }
+      70%  { box-shadow: 0 0 0 16px rgba(255,68,68,0); }
+      100% { box-shadow: 0 0 0 0 rgba(255,68,68,0); }
+    }
+
+    /* ── Main ── */
+    .main { padding: 16px 20px; max-width: 600px; margin: 0 auto; }
+
+    /* ── Route Row ── */
+    .route-row {
+      display: grid; grid-template-columns: 1fr 36px 1fr;
+      gap: 8px; align-items: end; margin-bottom: 14px;
+    }
+    .route-arrow {
+      display: flex; align-items: center; justify-content: center;
+      height: 44px; color: var(--cyan); font-size: 20px; font-weight: 700;
+    }
+
+    /* ── Inputs ── */
+    .field { margin-bottom: 12px; }
+    .field label {
+      display: block; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--light); margin-bottom: 5px;
+    }
+    .inp {
+      width: 100%; background: var(--panel);
+      border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 11px 13px;
+      color: var(--white); font-size: 15px;
+      font-family: 'Barlow', sans-serif; font-weight: 500;
+      outline: none; transition: border-color .15s;
+    }
+    .inp:focus { border-color: var(--cyan); }
+    .inp::placeholder { color: var(--gray); font-weight: 400; }
+
+    /* ── Load Specs ── */
+    .specs-grid {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px; margin-bottom: 14px;
+    }
+    .spec-card {
+      background: var(--panel);
+      border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 10px 12px;
+      cursor: pointer; transition: all .15s; text-align: center;
+    }
+    .spec-card.selected { border-color: var(--cyan); background: rgba(0,212,255,.08); }
+    .spec-card .sc-icon { font-size: 20px; margin-bottom: 4px; }
+    .spec-card .sc-label { font-size: 10px; font-weight: 700; color: var(--light); text-transform: uppercase; letter-spacing: .06em; }
+    .spec-card .sc-val { font-size: 12px; color: var(--cyan); font-family: 'DM Mono', monospace; margin-top: 2px; }
+
+    /* ── Settings Row ── */
+    .settings-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px; margin-bottom: 14px;
+    }
+
+    /* ── Calculate Button ── */
+    .calc-btn {
+      width: 100%; padding: 16px;
+      background: linear-gradient(135deg, var(--blue), #0a3260);
+      border: 2px solid var(--cyan);
+      border-radius: 12px;
+      color: var(--white); font-family: 'Barlow Condensed', sans-serif;
+      font-size: 18px; font-weight: 800; letter-spacing: 1px;
+      cursor: pointer; transition: all .15s;
+      text-transform: uppercase; margin-bottom: 20px;
+    }
+    .calc-btn:hover { background: var(--cyan); color: var(--bg); }
+    .calc-btn:active { transform: scale(.98); }
+
+    /* ── Results ── */
+    .results { display: none; }
+    .results.show { display: block; }
+
+    .verdict {
+      border-radius: 14px; padding: 18px 20px;
+      margin-bottom: 16px; text-align: center;
+      border: 2px solid;
+    }
+    .verdict.go    { background: rgba(0,230,118,.08); border-color: var(--green); }
+    .verdict.maybe { background: rgba(255,214,0,.08);  border-color: var(--yellow); }
+    .verdict.no    { background: rgba(255,68,68,.08);  border-color: var(--red); }
+
+    .verdict-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .12em; margin-bottom: 6px;
+    }
+    .verdict.go    .verdict-label { color: var(--green); }
+    .verdict.maybe .verdict-label { color: var(--yellow); }
+    .verdict.no    .verdict-label { color: var(--red); }
+
+    .verdict-rpm {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 52px; font-weight: 900; line-height: 1;
+      margin-bottom: 4px;
+    }
+    .verdict.go    .verdict-rpm { color: var(--green); }
+    .verdict.maybe .verdict-rpm { color: var(--yellow); }
+    .verdict.no    .verdict-rpm { color: var(--red); }
+
+    .verdict-sub { font-size: 13px; color: var(--light); }
+
+    /* ── Stats Grid ── */
+    .stats-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px; margin-bottom: 16px;
+    }
+    .stat-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px;
+    }
+    .stat-card .st-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--light); margin-bottom: 4px;
+    }
+    .stat-card .st-val {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 24px; font-weight: 800; color: var(--white);
+    }
+    .stat-card .st-sub { font-size: 11px; color: var(--gray); margin-top: 2px; }
+
+    /* ── Expense Breakdown ── */
+    .breakdown {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+    .breakdown h3 {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--light); margin-bottom: 10px;
+    }
+    .bk-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+      font-size: 14px;
+    }
+    .bk-row:last-child { border-bottom: none; }
+    .bk-row .bk-label { color: var(--light); font-weight: 500; }
+    .bk-row .bk-val { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; }
+    .bk-row.total { margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--border); border-bottom: none; }
+    .bk-row.total .bk-label { color: var(--white); font-weight: 700; font-size: 15px; }
+    .bk-row.total .bk-val { color: var(--cyan); font-size: 15px; font-weight: 700; }
+
+    /* ── Efficiency Badge ── */
+    .eff-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(0,212,255,.1); border: 1px solid rgba(0,212,255,.3);
+      border-radius: 20px; padding: 5px 12px;
+      font-size: 12px; font-weight: 600; color: var(--cyan);
+      margin-bottom: 16px;
+    }
+
+    /* ── Reset ── */
+    .reset-btn {
+      width: 100%; padding: 12px;
+      background: transparent;
+      border: 1.5px solid var(--border);
+      border-radius: 10px; color: var(--light);
+      font-family: 'Barlow', sans-serif; font-size: 14px; font-weight: 600;
+      cursor: pointer; margin-bottom: 20px;
+    }
+    .reset-btn:hover { border-color: var(--light); color: var(--white); }
+
+    /* ── Status ── */
+    .status-msg {
+      text-align: center; font-size: 13px; color: var(--yellow);
+      padding: 10px; min-height: 20px; font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div>
+    <h1>BMH <span>Load</span> Calc</h1>
+    <div class="header-sub">Rate · Mileage · Profit Evaluator</div>
+  </div>
+  <div style="font-size:22px">🚛</div>
+</div>
+
+<!-- Voice Hero -->
+<div class="voice-hero">
+  <button class="voice-big" id="voiceBtn" onclick="startVoice()">🎤</button>
+  <div class="voice-hint">Say <strong>"Dallas TX to Nashville TN rate 850"</strong></div>
+  <div class="voice-transcript" id="transcript"></div>
+</div>
+
+<div class="main">
+
+  <!-- Route -->
+  <div class="route-row">
+    <div class="field" style="margin-bottom:0">
+      <label>📍 Origin City</label>
+      <input class="inp" id="origin" placeholder="e.g. Dallas, TX">
+    </div>
+    <div class="route-arrow">→</div>
+    <div class="field" style="margin-bottom:0">
+      <label>🏁 Destination</label>
+      <input class="inp" id="dest" placeholder="e.g. Nashville, TN">
+    </div>
+  </div>
+
+  <!-- Rate -->
+  <div class="field">
+    <label>💰 Offered Rate ($)</label>
+    <input class="inp" id="rate" type="number" placeholder="e.g. 850" inputmode="decimal">
+  </div>
+
+  <!-- Load Type -->
+  <div style="margin-bottom:6px">
+    <label style="display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--light);margin-bottom:8px">Load Profile</label>
+    <div class="specs-grid">
+      <div class="spec-card selected" data-type="under" onclick="selectLoad(this,'under')">
+        <div class="sc-icon">📦</div>
+        <div class="sc-label">Under Cab</div>
+        <div class="sc-val">~15 MPG</div>
+      </div>
+      <div class="spec-card" data-type="over" onclick="selectLoad(this,'over')">
+        <div class="sc-icon">📐</div>
+        <div class="sc-label">Over Cab</div>
+        <div class="sc-val">~11 MPG</div>
+      </div>
+      <div class="spec-card" data-type="heavy" onclick="selectLoad(this,'heavy')">
+        <div class="sc-icon">⚖️</div>
+        <div class="sc-label">Heavy</div>
+        <div class="sc-val">~9 MPG</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="settings-row">
+    <div class="field" style="margin-bottom:0">
+      <label>⛽ Diesel ($/gal)</label>
+      <input class="inp" id="diesel" type="number" value="3.75" step="0.05" inputmode="decimal">
+    </div>
+    <div class="field" style="margin-bottom:0">
+      <label>🔧 Wear (¢/mi)</label>
+      <input class="inp" id="wear" type="number" value="15" inputmode="decimal">
+    </div>
+  </div>
+
+  <div class="settings-row">
+    <div class="field" style="margin-bottom:0">
+      <label>🍔 Per Diem ($)</label>
+      <input class="inp" id="perdiem" type="number" value="35" inputmode="decimal">
+    </div>
+    <div class="field" style="margin-bottom:0">
+      <label>🛣️ Tolls Est. ($)</label>
+      <input class="inp" id="tolls" type="number" value="0" inputmode="decimal">
+    </div>
+  </div>
+  <div class="settings-row">
+    <div class="field" style="margin-bottom:0">
+      <label>🏨 Lodging ($/night)</label>
+      <input class="inp" id="lodging" type="number" value="75" inputmode="decimal">
+    </div>
+    <div class="field" style="margin-bottom:0">
+      <label>🚗 Avg Speed (mph)</label>
+      <input class="inp" id="avgspeed" type="number" value="60" inputmode="decimal">
+    </div>
+  </div>
+
+  <div class="status-msg" id="statusMsg"></div>
+
+  <button class="calc-btn" onclick="calculate()">⚡ Calculate Load</button>
+
+  <!-- Results -->
+  <div class="results" id="results">
+
+    <div class="verdict" id="verdict">
+      <div class="verdict-label" id="verdictLabel"></div>
+      <div class="verdict-rpm" id="verdictRPM"></div>
+      <div class="verdict-sub" id="verdictSub"></div>
+    </div>
+
+    <div class="eff-badge" id="effBadge"></div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="st-label">📍 Distance</div>
+        <div class="st-val" id="resMiles">—</div>
+        <div class="st-sub">miles</div>
+      </div>
+      <div class="stat-card">
+        <div class="st-label">💰 Gross Rate</div>
+        <div class="st-val" id="resGross">—</div>
+        <div class="st-sub">offered</div>
+      </div>
+      <div class="stat-card">
+        <div class="st-label">✅ Net Profit</div>
+        <div class="st-val" id="resNet">—</div>
+        <div class="st-sub">after expenses</div>
+      </div>
+      <div class="stat-card">
+        <div class="st-label">⛽ Gallons</div>
+        <div class="st-val" id="resGallons">—</div>
+        <div class="st-sub">diesel needed</div>
+      </div>
+    </div>
+
+    <div class="breakdown">
+      <h3>Expense Breakdown</h3>
+      <div class="bk-row"><span class="bk-label">⛽ Fuel</span><span class="bk-val" id="bkFuel">—</span></div>
+      <div class="bk-row"><span class="bk-label">🍔 Food / Per Diem</span><span class="bk-val" id="bkFood">—</span></div>
+      <div class="bk-row"><span class="bk-label">🛣️ Tolls</span><span class="bk-val" id="bkTolls">—</span></div>
+      <div class="bk-row"><span class="bk-label">🏨 Lodging</span><span class="bk-val" id="bkLodging">—</span></div>
+      <div class="bk-row"><span class="bk-label">🔧 Wear &amp; Tear</span><span class="bk-val" id="bkWear">—</span></div>
+      <div class="bk-row total"><span class="bk-label">Total Expenses</span><span class="bk-val" id="bkTotal">—</span></div>
+    </div>
+
+    <button class="reset-btn" onclick="resetCalc()">↩ New Calculation</button>
+
+  </div>
+
+</div>
+
+<script>
+  // ── State ──
+  let loadType = 'under';
+  const MPG = { under: 15, over: 11, heavy: 9 };
+  let recognition = null;
+
+  function selectLoad(el, type) {
+    document.querySelectorAll('.spec-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    loadType = type;
+  }
+
+  // ── Voice ──
+  function startVoice() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { setStatus('Voice not supported in this browser'); return; }
+    if (recognition) { recognition.stop(); return; }
+
+    const btn = document.getElementById('voiceBtn');
+    const tx  = document.getElementById('transcript');
+
+    recognition = new SR();
+    recognition.lang = 'en-US';
+    recognition.interimResults = true;
+    recognition.continuous = false;
+
+    btn.classList.add('listening');
+    btn.textContent = '⏹';
+    tx.textContent = 'Listening...';
+
+    recognition.onresult = (e) => {
+      const text = Array.from(e.results).map(r => r[0].transcript).join('');
+      tx.textContent = '"' + text + '"';
+      if (e.results[0].isFinal) parseVoice(text);
+    };
+
+    recognition.onerror = () => { tx.textContent = 'Could not hear — try again'; };
+    recognition.onend = () => {
+      btn.classList.remove('listening');
+      btn.textContent = '🎤';
+      recognition = null;
+    };
+
+    recognition.start();
+  }
+
+  function parseVoice(text) {
+    const t = text.toLowerCase();
+
+    // Try to extract: "[city] [state] to [city] [state] rate [amount]"
+    const rateMatch = t.match(/rate\s+\$?(\d+(?:\.\d+)?)/i) ||
+                      t.match(/\$(\d+(?:\.\d+)?)/i) ||
+                      t.match(/(\d{3,4})\s*dollars?/i) ||
+                      t.match(/for\s+\$?(\d+(?:\.\d+)?)/i);
+
+    if (rateMatch) {
+      document.getElementById('rate').value = rateMatch[1];
+    }
+
+    // Extract cities — look for "X to Y" pattern
+    const toMatch = t.match(/^(.+?)\s+to\s+(.+?)(?:\s+rate|\s+\$|\s+for|\s*$)/i);
+    if (toMatch) {
+      document.getElementById('origin').value = formatCity(toMatch[1].trim());
+      document.getElementById('dest').value   = formatCity(toMatch[2].trim());
+    }
+
+    // Load type keywords
+    if (t.includes('heavy') || t.includes('overweight')) selectLoadByType('heavy');
+    else if (t.includes('over cab') || t.includes('tall') || t.includes('oversize')) selectLoadByType('over');
+    else if (t.includes('under cab') || t.includes('flat') || t.includes('small')) selectLoadByType('under');
+  }
+
+  function formatCity(s) {
+    // Capitalize each word, handle common state abbrevs
+    return s.replace(/\b\w/g, c => c.toUpperCase())
+            .replace(/\b(Tx|Tn|Oh|Ga|Fl|Ca|Ny|Il|Pa|Nc|Va|Az|Co|Wa|Or|Mo|Sc|Al|La|Ms|Ar|Ky|Wv|Md|De|Ct|Ri|Nj|Ma|Vt|Nh|Me|Mn|Wi|Mi|Ia|In|Nd|Sd|Ne|Ks|Ok|Nm|Id|Mt|Wy|Nv|Ut|Ak|Hi)\b/g,
+              m => m.toUpperCase());
+  }
+
+  function selectLoadByType(type) {
+    const el = document.querySelector(`[data-type="${type}"]`);
+    if (el) selectLoad(el, type);
+  }
+
+  // ── Calculate ──
+  async function calculate() {
+    const origin = document.getElementById('origin').value.trim();
+    const dest   = document.getElementById('dest').value.trim();
+    const rate   = parseFloat(document.getElementById('rate').value) || 0;
+
+    if (!origin || !dest) { setStatus('Enter origin and destination cities'); return; }
+    if (!rate) { setStatus('Enter the offered rate'); return; }
+
+    setStatus('📡 Looking up route...');
+    document.getElementById('results').classList.remove('show');
+
+    try {
+      // Geocode both cities using Nominatim
+      const [fromCoord, toCoord] = await Promise.all([
+        geocode(origin), geocode(dest)
+      ]);
+
+      if (!fromCoord) { setStatus('Could not find: ' + origin); return; }
+      if (!toCoord)   { setStatus('Could not find: ' + dest); return; }
+
+      setStatus('📡 Calculating route...');
+
+      // Get driving distance via OSRM (free, no API key)
+      const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${fromCoord.lon},${fromCoord.lat};${toCoord.lon},${toCoord.lat}?overview=false`;
+      const osrmRes  = await fetch(osrmUrl);
+      const osrmData = await osrmRes.json();
+
+      if (!osrmData.routes || !osrmData.routes[0]) { setStatus('Could not calculate route'); return; }
+
+      const meters = osrmData.routes[0].distance;
+      const miles  = Math.round(meters * 0.000621371);
+
+      showResults(miles, rate);
+      setStatus('');
+
+    } catch(e) {
+      setStatus('⚠️ Error calculating route. Check city names.');
+      console.error(e);
+    }
+  }
+
+  async function geocode(city) {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city + ', USA')}&format=json&limit=1`;
+    const res  = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+    const data = await res.json();
+    if (!data[0]) return null;
+    return { lat: data[0].lat, lon: data[0].lon };
+  }
+
+  function showResults(miles, rate) {
+    const diesel     = parseFloat(document.getElementById('diesel').value) || 3.75;
+    const wearCPM    = parseFloat(document.getElementById('wear').value) || 15;
+    const perdiem    = parseFloat(document.getElementById('perdiem').value) || 35;
+    const tolls      = parseFloat(document.getElementById('tolls').value) || 0;
+    const lodgingNightly = parseFloat(document.getElementById('lodging').value) || 75;
+    const avgSpeed   = parseFloat(document.getElementById('avgspeed').value) || 60;
+
+    const mpg        = MPG[loadType];
+    const gallons    = miles / mpg;
+    const fuelCost   = gallons * diesel;
+    const wearCost   = miles * (wearCPM / 100);
+    // Estimate drive hours; nights = full overnight stops needed (>10hrs = 1 night, etc.)
+    const driveHours = miles / avgSpeed;
+    const nights     = Math.max(0, Math.floor(driveHours / 10));
+    const lodgingCost = nights * lodgingNightly;
+    const totalExp   = fuelCost + perdiem + tolls + wearCost + lodgingCost;
+    const netProfit= rate - totalExp;
+    const rpm      = rate / miles;
+
+    // Populate stats
+    document.getElementById('resMiles').textContent   = miles.toLocaleString();
+    document.getElementById('resGross').textContent   = '$' + rate.toLocaleString();
+    document.getElementById('resNet').textContent     = '$' + Math.round(netProfit).toLocaleString();
+    document.getElementById('resGallons').textContent = Math.round(gallons);
+
+    // Breakdown
+    document.getElementById('bkFuel').textContent    = '$' + fuelCost.toFixed(2);
+    document.getElementById('bkFood').textContent    = '$' + perdiem.toFixed(2);
+    document.getElementById('bkTolls').textContent   = '$' + tolls.toFixed(2);
+    document.getElementById('bkWear').textContent    = '$' + wearCost.toFixed(2);
+    document.getElementById('bkLodging').textContent = nights > 0 ? '$' + lodgingCost.toFixed(2) + ' (' + nights + ' night' + (nights>1?'s':'') + ')' : '$0';
+    document.getElementById('bkTotal').textContent   = '$' + totalExp.toFixed(2);
+
+    // Efficiency badge
+    const loadLabels = { under: '📦 Under Cab — Best Fuel Efficiency', over: '📐 Over Cab — Reduced MPG', heavy: '⚖️ Heavy Load — Max Drag' };
+    document.getElementById('effBadge').textContent = loadLabels[loadType] + ' · ' + mpg + ' MPG';
+
+    // Verdict
+    const verdictEl  = document.getElementById('verdict');
+    const labelEl    = document.getElementById('verdictLabel');
+    const rpmEl      = document.getElementById('verdictRPM');
+    const subEl      = document.getElementById('verdictSub');
+
+    rpmEl.textContent = '$' + rpm.toFixed(2) + '/mi';
+
+    if (rpm >= 2.50) {
+      verdictEl.className = 'verdict go';
+      labelEl.textContent = '✅ Strong Load — Take It';
+      subEl.textContent   = `Net $${Math.round(netProfit).toLocaleString()} · ${miles} miles`;
+    } else if (rpm >= 1.75) {
+      verdictEl.className = 'verdict maybe';
+      labelEl.textContent = '🟡 Marginal — Negotiate Up';
+      subEl.textContent   = `Net $${Math.round(netProfit).toLocaleString()} · Could be better`;
+    } else {
+      verdictEl.className = 'verdict no';
+      labelEl.textContent = '🔴 Pass — Below Cost';
+      subEl.textContent   = `Net $${Math.round(netProfit).toLocaleString()} · Not worth it`;
+    }
+
+    document.getElementById('results').classList.add('show');
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function resetCalc() {
+    document.getElementById('results').classList.remove('show');
+    document.getElementById('origin').value = '';
+    document.getElementById('dest').value = '';
+    document.getElementById('rate').value = '';
+    document.getElementById('transcript').textContent = '';
+    setStatus('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function setStatus(msg) {
+    document.getElementById('statusMsg').textContent = msg;
+  }
+</script>
+</body>
+</html>
