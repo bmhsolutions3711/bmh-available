@@ -226,7 +226,11 @@
       </div>
       <div class="add-row">
         <input class="add-input" id="inp-business" placeholder="Add task..." onkeydown="catKey(event,'business')">
-
+        <select id="tf-business" style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:7px 5px;color:var(--light);font-size:11px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;flex-shrink:0">
+          <option value="weekly">Week</option>
+          <option value="quarterly">Qtr</option>
+          <option value="annual">Year</option>
+        </select>
       </div>
       <div class="fin-section">
         <div class="fin-header" onclick="toggleFin('business')">
@@ -249,7 +253,11 @@
       </div>
       <div class="add-row">
         <input class="add-input" id="inp-personal" placeholder="Add task..." onkeydown="catKey(event,'personal')">
-
+        <select id="tf-personal" style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:7px 5px;color:var(--light);font-size:11px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;flex-shrink:0">
+          <option value="weekly">Week</option>
+          <option value="quarterly">Qtr</option>
+          <option value="annual">Year</option>
+        </select>
       </div>
       <div class="fin-section">
         <div class="fin-header" onclick="toggleFin('personal')">
@@ -272,7 +280,11 @@
       </div>
       <div class="add-row">
         <input class="add-input" id="inp-spiritual" placeholder="Add task..." onkeydown="catKey(event,'spiritual')">
-
+        <select id="tf-spiritual" style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:7px 5px;color:var(--light);font-size:11px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;flex-shrink:0">
+          <option value="weekly">Week</option>
+          <option value="quarterly">Qtr</option>
+          <option value="annual">Year</option>
+        </select>
       </div>
       <div class="fin-section">
         <div class="fin-header" onclick="toggleFin('spiritual')">
@@ -379,28 +391,23 @@
 
   function renderCat(cat) {
     const el = document.getElementById('groups-' + cat);
-    const active = tasks[cat].filter(t=>!t.done);
-    if (!active.length) { el.innerHTML='<div class="empty-state">No tasks yet</div>'; return; }
-
     let html = '';
     TIMEFRAMES.forEach(tf => {
-      const group = active.filter(t=>(t.timeframe||'weekly')===tf);
-      // Always show drop zone before each group so you can drag into any timeframe
-      html += `<div class="tf-drop" ondragover="window._tfOver(event)" ondrop="window._tfDrop(event,'${cat}','${tf}')" ondragleave="window._tfLeave(event)">
-        <span class="tf-drop-label">drop into ${TF_LABELS[tf]}</span>
-      </div>`;
-      if (!group.length) return;
+      const group = tasks[cat].filter(t=>!t.done && (t.timeframe||'weekly')===tf);
       html += `
-        <div class="tf-group">
+        <div class="tf-group"
+             ondragover="window._tfOver(event)"
+             ondrop="window._tfDrop(event,'${cat}','${tf}')"
+             ondragleave="window._tfLeave(event)">
           <div class="tf-group-label">
             <span class="tf-dot ${tf}"></span>${TF_LABELS[tf]}
           </div>
           <div class="task-list">
-            ${group.map(t=>taskHTML(cat,t,true)).join('')}
+            ${group.length ? group.map(t=>taskHTML(cat,t,true)).join('') : '<div class="empty-state">Drop tasks here</div>'}
           </div>
         </div>`;
     });
-    el.innerHTML = html || '<div class="empty-state">No tasks yet</div>';
+    el.innerHTML = html;
   }
 
   function taskHTML(cat, t, showDate) {
@@ -537,7 +544,8 @@
   window.catKey = (e, cat) => {
     if (e.key==='Enter') {
       const inp = document.getElementById('inp-'+cat);
-      addTask(cat, inp.value, 'weekly');
+      const tf  = document.getElementById('tf-'+cat)?.value || 'weekly';
+      addTask(cat, inp.value, tf);
       inp.value='';
     }
   };
@@ -595,7 +603,7 @@
     showToast('Listening...',8000);
     recognition.onresult=(e)=>{
       const text=e.results[0][0].transcript;
-      const tf = cat!=='quick' ? 'weekly' : 'quick';
+      const tf = cat!=='quick' ? (document.getElementById('tf-'+cat)?.value||'weekly') : 'quick';
       addTask(cat,text,tf); showToast('Added: '+text);
     };
     recognition.onerror=()=>showToast('Could not hear — try again');
