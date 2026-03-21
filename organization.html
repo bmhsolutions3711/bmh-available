@@ -175,6 +175,9 @@
     .subtask-toggle:hover { background:rgba(255,255,255,.1); color:var(--light); }
     .subtask-del { font-size:11px; color:rgba(255,255,255,.2); cursor:pointer; background:none; border:none; padding:0 3px; flex-shrink:0; }
     .subtask-del:hover { color:var(--red); }
+    .subtask-mic { background:none; border:none; cursor:pointer; font-size:14px; padding:3px 5px; border-radius:5px; color:var(--gray); flex-shrink:0; transition:all .15s; }
+    .subtask-mic:hover { background:rgba(255,255,255,.08); color:var(--cyan); }
+    .subtask-mic.listening { color:var(--red); animation:pulse .8s infinite; }
 
     .task-edit-input {
       flex:1; background:rgba(0,0,0,.4); border:1px solid var(--cyan);
@@ -461,6 +464,7 @@
         ${subsHTML}
         <div class="subtask-add">
           <input class="subtask-inp" id="st-${t.id}" placeholder="Add subtask..." onkeydown="window._stAdd(event,'${cat}',${t.id})">
+          <button class="subtask-mic" id="stmic-${t.id}" onclick="window._stVoice('${cat}',${t.id})" title="Voice input">🎤</button>
         </div>
       </div>` : ''}
     </div>`;
@@ -498,12 +502,66 @@
     }
   };
 
+  window._stVoice = (cat, taskId) => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { showToast('Voice not supported here'); return; }
+    const btn = document.getElementById('stmic-' + taskId);
+    if (!btn) return;
+    const rec = new SR();
+    rec.lang = 'en-US'; rec.interimResults = false;
+    btn.classList.add('listening'); btn.textContent = '⏹';
+    showToast('Listening...', 6000);
+    rec.onresult = (e) => {
+      const text = e.results[0][0].transcript;
+      const t = tasks[cat].find(t=>t.id===taskId);
+      if (!t) return;
+      if (!t.subtasks) t.subtasks = [];
+      t.subtasks.push({ text: text.trim(), done: false });
+      save(); renderAll();
+      showToast('Subtask added: ' + text);
+    };
+    rec.onerror = () => showToast('Could not hear — try again');
+    rec.onend = () => { btn.classList.remove('listening'); btn.textContent = '🎤'; };
+    rec.start();
+  };
+
   window._stDel = (cat, taskId, idx) => {
     const t = tasks[cat].find(t=>t.id===taskId);
     if (t && t.subtasks) {
       t.subtasks.splice(idx, 1);
       save(); renderAll();
     }
+  };
+
+  let stRecognition = null;
+  window._stVoice = (cat, taskId) => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { showToast('Voice not supported'); return; }
+    if (stRecognition) { stRecognition.stop(); stRecognition = null; return; }
+    const btn = document.getElementById('stmic-' + taskId);
+    stRecognition = new SR();
+    stRecognition.lang = 'en-US';
+    stRecognition.interimResults = false;
+    if (btn) { btn.textContent = '⏹'; btn.style.background = 'rgba(239,68,68,.2)'; btn.style.borderColor = '#EF4444'; btn.style.color = '#EF4444'; }
+    showToast('Listening for subtask...', 8000);
+    stRecognition.onresult = (e) => {
+      const text = e.results[0][0].transcript.trim();
+      const t = tasks[cat].find(t=>t.id===taskId);
+      if (t) {
+        if (!t.subtasks) t.subtasks = [];
+        t.subtasks.push({ text, done: false });
+        save(); renderAll();
+        showToast('Subtask added: ' + text);
+        // Keep panel open
+        window._subOpen[taskId] = true;
+      }
+    };
+    stRecognition.onerror = () => showToast('Could not hear — try again');
+    stRecognition.onend = () => {
+      stRecognition = null;
+      renderAll();
+    };
+    stRecognition.start();
   };
 
   window._edit = (cat, id, textEl) => {
