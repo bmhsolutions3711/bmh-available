@@ -128,6 +128,9 @@
     .drop-zone { min-height:32px; border:1.5px dashed rgba(255,255,255,.07); border-radius:7px; margin:6px 14px; display:flex; align-items:center; justify-content:center; transition:all .15s; }
     .drop-zone.over { border-color:var(--cyan); background:rgba(0,207,255,.04); }
     .drop-zone-label { font-size:10px; color:rgba(255,255,255,.12); }
+    .tf-drop { min-height:26px; border:1.5px dashed rgba(255,255,255,.07); border-radius:6px; margin:4px 14px; display:flex; align-items:center; justify-content:center; transition:all .15s; }
+    .tf-drop.over { border-color:var(--cyan); background:rgba(0,207,255,.05); }
+    .tf-drop-label { font-size:9px; color:rgba(255,255,255,.1); text-transform:uppercase; letter-spacing:.06em; }
 
     /* ── Add Task Row ── */
     .add-row { display:flex; gap:6px; padding:8px 14px; border-top:1px solid rgba(255,255,255,.05); }
@@ -215,7 +218,7 @@
     <div class="cat-col biz" ondragover="dragOver(event)" ondrop="drop(event,'business')" ondragleave="dragLeave(event)">
       <div class="cat-col-header">
         <div class="cat-col-title">💼 Business <span class="cat-count-pill" id="cnt-business">0</span></div>
-        <button class="voice-cat" id="vc-business" onclick="startVoice('business')">🎤 Add</button>
+        <button class="voice-cat" id="vc-business" onclick="startVoice('business')">🎤 Voice</button>
       </div>
       <div id="groups-business"></div>
       <div class="drop-zone" id="drop-business" ondragover="dragOver(event)" ondrop="drop(event,'business')" ondragleave="dragLeave(event)">
@@ -238,7 +241,7 @@
     <div class="cat-col per" ondragover="dragOver(event)" ondrop="drop(event,'personal')" ondragleave="dragLeave(event)">
       <div class="cat-col-header">
         <div class="cat-col-title">👤 Personal <span class="cat-count-pill" id="cnt-personal">0</span></div>
-        <button class="voice-cat" id="vc-personal" onclick="startVoice('personal')">🎤 Add</button>
+        <button class="voice-cat" id="vc-personal" onclick="startVoice('personal')">🎤 Voice</button>
       </div>
       <div id="groups-personal"></div>
       <div class="drop-zone" id="drop-personal" ondragover="dragOver(event)" ondrop="drop(event,'personal')" ondragleave="dragLeave(event)">
@@ -261,7 +264,7 @@
     <div class="cat-col spi" ondragover="dragOver(event)" ondrop="drop(event,'spiritual')" ondragleave="dragLeave(event)">
       <div class="cat-col-header">
         <div class="cat-col-title">🙏 Spiritual <span class="cat-count-pill" id="cnt-spiritual">0</span></div>
-        <button class="voice-cat" id="vc-spiritual" onclick="startVoice('spiritual')">🎤 Add</button>
+        <button class="voice-cat" id="vc-spiritual" onclick="startVoice('spiritual')">🎤 Voice</button>
       </div>
       <div id="groups-spiritual"></div>
       <div class="drop-zone" id="drop-spiritual" ondragover="dragOver(event)" ondrop="drop(event,'spiritual')" ondragleave="dragLeave(event)">
@@ -382,6 +385,10 @@
     let html = '';
     TIMEFRAMES.forEach(tf => {
       const group = active.filter(t=>(t.timeframe||'weekly')===tf);
+      // Always show drop zone before each group so you can drag into any timeframe
+      html += `<div class="tf-drop" ondragover="window._tfOver(event)" ondrop="window._tfDrop(event,'${cat}','${tf}')" ondragleave="window._tfLeave(event)">
+        <span class="tf-drop-label">drop into ${TF_LABELS[tf]}</span>
+      </div>`;
       if (!group.length) return;
       html += `
         <div class="tf-group">
@@ -549,13 +556,30 @@
   window.dragLeave = (e) => { e.currentTarget.classList.remove('over'); };
   window.drop = (e, targetCat) => {
     e.preventDefault(); e.currentTarget.classList.remove('over');
-    if (!draggedTask || draggedFrom===targetCat) return;
+    if (!draggedTask) return;
+    if (draggedFrom===targetCat) return; // same cat handled by TF drop
     tasks[draggedFrom] = tasks[draggedFrom].filter(t=>t.id!==draggedTask.id);
     if (draggedFrom==='quick' && targetCat!=='quick') {
       draggedTask.timeframe = 'weekly';
     }
     tasks[targetCat].unshift(draggedTask);
     renderAll(); save(); showToast('Moved to '+targetCat);
+    draggedTask=null; draggedFrom=null;
+  };
+
+  // ── TF Drop (within same column) ──
+  window._tfOver  = (e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.add('over'); };
+  window._tfLeave = (e) => { e.currentTarget.classList.remove('over'); };
+  window._tfDrop  = (e, cat, tf) => {
+    e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('over');
+    if (!draggedTask) return;
+    // Remove from source
+    tasks[draggedFrom] = tasks[draggedFrom].filter(t=>t.id!==draggedTask.id);
+    // Update timeframe and add to target cat
+    draggedTask.timeframe = tf;
+    tasks[cat].unshift(draggedTask);
+    renderAll(); save();
+    showToast('Moved to ' + TF_LABELS[tf]);
     draggedTask=null; draggedFrom=null;
   };
 
@@ -575,7 +599,7 @@
       addTask(cat,text,tf); showToast('Added: '+text);
     };
     recognition.onerror=()=>showToast('Could not hear — try again');
-    recognition.onend=()=>{ btn.classList.remove('listening'); btn.textContent=cat==='quick'?'🎤 Voice':'🎤 Add'; recognition=null; };
+    recognition.onend=()=>{ btn.classList.remove('listening'); btn.textContent='🎤 Voice'; recognition=null; };
     recognition.start();
   };
 
