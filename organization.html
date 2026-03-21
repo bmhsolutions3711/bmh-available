@@ -158,6 +158,24 @@
     .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--steel); border:1px solid rgba(0,207,255,.3); border-radius:10px; padding:9px 18px; font-size:12px; font-weight:500; color:var(--cyan); transition:transform .3s cubic-bezier(.34,1.56,.64,1); z-index:999; white-space:nowrap; }
     .toast.show { transform:translateX(-50%) translateY(0); }
 
+    /* ── Subtasks ── */
+    .subtask-section { padding: 4px 14px 8px 44px; }
+    .subtask-item { display:flex; align-items:center; gap:7px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,.03); }
+    .subtask-item:last-child { border-bottom:none; }
+    .subtask-cb { width:13px; height:13px; border-radius:3px; border:1px solid rgba(255,255,255,.2); background:transparent; flex-shrink:0; cursor:pointer; appearance:none; -webkit-appearance:none; position:relative; transition:all .15s; }
+    .subtask-cb:checked { background:var(--done); border-color:var(--done); }
+    .subtask-cb:checked::after { content:'✓'; position:absolute; top:-2px; left:1px; font-size:10px; color:#fff; font-weight:700; }
+    .subtask-text { font-size:13px; color:var(--light); flex:1; }
+    .subtask-text.done { color:var(--done); text-decoration:line-through; }
+    .subtask-add { display:flex; gap:5px; margin-top:5px; }
+    .subtask-inp { flex:1; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.07); border-radius:5px; padding:5px 8px; color:var(--white); font-size:12px; font-family:'DM Sans',sans-serif; outline:none; }
+    .subtask-inp:focus { border-color:rgba(0,207,255,.4); }
+    .subtask-inp::placeholder { color:rgba(255,255,255,.15); }
+    .subtask-toggle { font-size:10px; color:var(--gray); cursor:pointer; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,.05); border:none; font-family:'DM Sans',sans-serif; flex-shrink:0; transition:all .15s; }
+    .subtask-toggle:hover { background:rgba(255,255,255,.1); color:var(--light); }
+    .subtask-del { font-size:11px; color:rgba(255,255,255,.2); cursor:pointer; background:none; border:none; padding:0 3px; flex-shrink:0; }
+    .subtask-del:hover { color:var(--red); }
+
     .task-edit-input {
       flex:1; background:rgba(0,0,0,.4); border:1px solid var(--cyan);
       border-radius:6px; padding:4px 8px; color:var(--white);
@@ -417,15 +435,76 @@
   }
 
   function taskHTML(cat, t, showDate) {
-    return `<div class="task-item" draggable="true" ondragstart="window._ds(event,'${cat}',${t.id})">
-      <span class="drag-h">⠿</span>
-      <input type="checkbox" class="task-cb" onchange="window._td('${cat}',${t.id})">
-      <div class="task-body">
-        <div class="task-text" ondblclick="window._edit('${cat}',${t.id},this)" title="Double-click to edit" style="cursor:text">${esc(t.text)}</div>
-        ${showDate ? `<div class="task-date">${t.created||''}</div>` : ''}
+    const subs      = t.subtasks || [];
+    const subCount  = subs.length;
+    const subDone   = subs.filter(s=>s.done).length;
+    const subLabel  = subCount > 0 ? `${subDone}/${subCount}` : '+';
+    const subOpen   = window._subOpen && window._subOpen[t.id];
+    const subsHTML  = subCount > 0 ? subs.map((s,i) => `
+      <div class="subtask-item">
+        <input type="checkbox" class="subtask-cb" ${s.done?'checked':''} onchange="window._stDone('${cat}',${t.id},${i})">
+        <span class="subtask-text ${s.done?'done':''}">${esc(s.text)}</span>
+        <button class="subtask-del" onclick="window._stDel('${cat}',${t.id},${i})">✕</button>
+      </div>`).join('') : '';
+
+    return `<div>
+      <div class="task-item" draggable="true" ondragstart="window._ds(event,'${cat}',${t.id})">
+        <span class="drag-h">⠿</span>
+        <input type="checkbox" class="task-cb" onchange="window._td('${cat}',${t.id})">
+        <div class="task-body">
+          <div class="task-text" ondblclick="window._edit('${cat}',${t.id},this)" title="Double-click to edit" style="cursor:text">${esc(t.text)}</div>
+          ${showDate ? `<div class="task-date">${t.created||''}</div>` : ''}
+        </div>
+        <button class="subtask-toggle" onclick="window._subToggle(${t.id})">${subLabel} ▾</button>
       </div>
+      ${subOpen ? `<div class="subtask-section">
+        ${subsHTML}
+        <div class="subtask-add">
+          <input class="subtask-inp" id="st-${t.id}" placeholder="Add subtask..." onkeydown="window._stAdd(event,'${cat}',${t.id})">
+        </div>
+      </div>` : ''}
     </div>`;
   }
+
+  // ── Subtask state (open/close) ──
+  window._subOpen = {};
+  window._subToggle = (id) => {
+    window._subOpen[id] = !window._subOpen[id];
+    renderAll();
+    // Re-focus input if opening
+    if (window._subOpen[id]) {
+      setTimeout(() => { const el = document.getElementById('st-'+id); if(el) el.focus(); }, 50);
+    }
+  };
+
+  window._stAdd = (e, cat, taskId) => {
+    if (e.key !== 'Enter') return;
+    const inp = document.getElementById('st-'+taskId);
+    if (!inp || !inp.value.trim()) return;
+    const t = tasks[cat].find(t=>t.id===taskId);
+    if (!t) return;
+    if (!t.subtasks) t.subtasks = [];
+    t.subtasks.push({ text: inp.value.trim(), done: false });
+    inp.value = '';
+    save(); renderAll();
+    setTimeout(() => { const el = document.getElementById('st-'+taskId); if(el) el.focus(); }, 50);
+  };
+
+  window._stDone = (cat, taskId, idx) => {
+    const t = tasks[cat].find(t=>t.id===taskId);
+    if (t && t.subtasks && t.subtasks[idx]) {
+      t.subtasks[idx].done = !t.subtasks[idx].done;
+      save(); renderAll();
+    }
+  };
+
+  window._stDel = (cat, taskId, idx) => {
+    const t = tasks[cat].find(t=>t.id===taskId);
+    if (t && t.subtasks) {
+      t.subtasks.splice(idx, 1);
+      save(); renderAll();
+    }
+  };
 
   window._edit = (cat, id, textEl) => {
     const t = tasks[cat].find(t=>t.id===id);
