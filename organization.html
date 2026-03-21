@@ -134,7 +134,6 @@
     .add-input { flex:1; background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.07); border-radius:7px; padding:7px 9px; color:var(--white); font-size:12px; font-family:'DM Sans',sans-serif; outline:none; }
     .add-input:focus { border-color:rgba(255,255,255,.18); }
     .add-input::placeholder { color:rgba(255,255,255,.16); }
-    .tf-select { background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.07); border-radius:7px; padding:7px 5px; color:var(--light); font-size:11px; font-family:'DM Sans',sans-serif; outline:none; cursor:pointer; }
 
     /* ── Finished Per-Category ── */
     .fin-month-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--gray); padding:8px 14px 3px; border-top:1px solid rgba(255,255,255,.04); }
@@ -184,21 +183,36 @@
 
 <div class="main">
 
-  <!-- Quick Inbox — full width -->
-  <div class="quick-card">
-    <div class="quick-header">
-      <span class="quick-title">⚡ Quick Inbox</span>
-      <button class="voice-q" id="voiceQ" onclick="startVoice('quick')">🎤 Voice</button>
+  <!-- Top Row: Quick Inbox 2/3 + Shopping List 1/3 -->
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px">
+
+    <!-- Quick Inbox -->
+    <div class="quick-card" style="margin-bottom:0">
+      <div class="quick-header">
+        <span class="quick-title">⚡ Quick Inbox</span>
+        <button class="voice-q" id="voiceQ" onclick="startVoice('quick')">🎤 Voice</button>
+      </div>
+      <input class="quick-input" id="quickInput" placeholder="Type a quick thought and press Enter..." onkeydown="quickKey(event)">
+      <div id="quickList"></div>
     </div>
-    <input class="quick-input" id="quickInput" placeholder="Type a quick thought and press Enter..." onkeydown="quickKey(event)">
-    <div id="quickList"></div>
+
+    <!-- Shopping List -->
+    <div class="quick-card" style="margin-bottom:0;border-color:rgba(16,185,129,.3)">
+      <div class="quick-header">
+        <span class="quick-title" style="color:#10B981">🛒 Shopping List</span>
+        <button class="voice-q" id="voiceShop" style="border-color:#10B981;color:#10B981;background:rgba(16,185,129,.12)" onclick="startVoice('shopping')">🎤 Voice</button>
+      </div>
+      <input class="quick-input" id="shopInput" placeholder="Add item and press Enter..." onkeydown="shopKey(event)" style="border-color:rgba(16,185,129,.15)">
+      <div id="shopList"></div>
+    </div>
+
   </div>
 
   <!-- 3-Column Row -->
   <div class="cat-row">
 
     <!-- Business -->
-    <div class="cat-col biz">
+    <div class="cat-col biz" ondragover="dragOver(event)" ondrop="drop(event,'business')" ondragleave="dragLeave(event)">
       <div class="cat-col-header">
         <div class="cat-col-title">💼 Business <span class="cat-count-pill" id="cnt-business">0</span></div>
         <button class="voice-cat" id="vc-business" onclick="startVoice('business')">🎤 Add</button>
@@ -209,11 +223,7 @@
       </div>
       <div class="add-row">
         <input class="add-input" id="inp-business" placeholder="Add task..." onkeydown="catKey(event,'business')">
-        <select class="tf-select" id="tf-business">
-          <option value="weekly" selected>This Week</option>
-          <option value="quarterly">This Quarter</option>
-          <option value="annual">This Year</option>
-        </select>
+
       </div>
       <div class="fin-section">
         <div class="fin-header" onclick="toggleFin('business')">
@@ -225,7 +235,7 @@
     </div>
 
     <!-- Personal -->
-    <div class="cat-col per">
+    <div class="cat-col per" ondragover="dragOver(event)" ondrop="drop(event,'personal')" ondragleave="dragLeave(event)">
       <div class="cat-col-header">
         <div class="cat-col-title">👤 Personal <span class="cat-count-pill" id="cnt-personal">0</span></div>
         <button class="voice-cat" id="vc-personal" onclick="startVoice('personal')">🎤 Add</button>
@@ -236,11 +246,7 @@
       </div>
       <div class="add-row">
         <input class="add-input" id="inp-personal" placeholder="Add task..." onkeydown="catKey(event,'personal')">
-        <select class="tf-select" id="tf-personal">
-          <option value="weekly" selected>This Week</option>
-          <option value="quarterly">This Quarter</option>
-          <option value="annual">This Year</option>
-        </select>
+
       </div>
       <div class="fin-section">
         <div class="fin-header" onclick="toggleFin('personal')">
@@ -252,7 +258,7 @@
     </div>
 
     <!-- Spiritual -->
-    <div class="cat-col spi">
+    <div class="cat-col spi" ondragover="dragOver(event)" ondrop="drop(event,'spiritual')" ondragleave="dragLeave(event)">
       <div class="cat-col-header">
         <div class="cat-col-title">🙏 Spiritual <span class="cat-count-pill" id="cnt-spiritual">0</span></div>
         <button class="voice-cat" id="vc-spiritual" onclick="startVoice('spiritual')">🎤 Add</button>
@@ -263,11 +269,7 @@
       </div>
       <div class="add-row">
         <input class="add-input" id="inp-spiritual" placeholder="Add task..." onkeydown="catKey(event,'spiritual')">
-        <select class="tf-select" id="tf-spiritual">
-          <option value="weekly" selected>This Week</option>
-          <option value="quarterly">This Quarter</option>
-          <option value="annual">This Year</option>
-        </select>
+
       </div>
       <div class="fin-section">
         <div class="fin-header" onclick="toggleFin('spiritual')">
@@ -304,7 +306,7 @@
   const TIMEFRAMES = ['weekly','quarterly','annual'];
   const TF_LABELS  = { weekly:'This Week', quarterly:'This Quarter', annual:'This Year' };
 
-  let tasks = { quick:[], business:[], personal:[], spiritual:[] };
+  let tasks = { quick:[], business:[], personal:[], spiritual:[], shopping:[] };
   let saveTimer = null;
   let draggedTask = null;
   let draggedFrom = null;
@@ -320,7 +322,7 @@
   onSnapshot(REF, snap => {
     if (snap.exists()) {
       const d = snap.data();
-      tasks = { quick:d.quick||[], business:d.business||[], personal:d.personal||[], spiritual:d.spiritual||[] };
+      tasks = { quick:d.quick||[], business:d.business||[], personal:d.personal||[], spiritual:d.spiritual||[], shopping:d.shopping||[] };
     }
     renderAll(); setSync('● synced','saved');
   }, err => { setSync('● offline'); console.error(err); });
@@ -359,6 +361,7 @@
   // ── Render ──
   function renderAll() {
     renderQuick();
+    renderShopping();
     ['business','personal','spiritual'].forEach(renderCat);
     renderFinished();
     updateCounts();
@@ -527,7 +530,7 @@
   window.catKey = (e, cat) => {
     if (e.key==='Enter') {
       const inp = document.getElementById('inp-'+cat);
-      addTask(cat, inp.value, document.getElementById('tf-'+cat).value);
+      addTask(cat, inp.value, 'weekly');
       inp.value='';
     }
   };
@@ -568,12 +571,42 @@
     showToast('Listening...',8000);
     recognition.onresult=(e)=>{
       const text=e.results[0][0].transcript;
-      const tf = cat!=='quick' ? document.getElementById('tf-'+cat)?.value||'weekly' : 'quick';
+      const tf = cat!=='quick' ? 'weekly' : 'quick';
       addTask(cat,text,tf); showToast('Added: '+text);
     };
     recognition.onerror=()=>showToast('Could not hear — try again');
     recognition.onend=()=>{ btn.classList.remove('listening'); btn.textContent=cat==='quick'?'🎤 Voice':'🎤 Add'; recognition=null; };
     recognition.start();
+  };
+
+  window.shopKey = (e) => {
+    if (e.key==='Enter') {
+      const inp = document.getElementById('shopInput');
+      if (!inp.value.trim()) return;
+      tasks.shopping.unshift({ id:Date.now(), text:inp.value.trim(), done:false, created:new Date().toLocaleDateString('en-US',{month:'2-digit',day:'2-digit'}) });
+      inp.value='';
+      renderShopping(); save();
+    }
+  };
+
+  function renderShopping() {
+    const el = document.getElementById('shopList');
+    if (!el) return;
+    const list = tasks.shopping;
+    if (!list.length) { el.innerHTML='<div class="empty-state">No items yet</div>'; return; }
+    el.innerHTML = list.map(t => `
+      <div class="task-item" draggable="true" ondragstart="window._ds(event,'shopping',${t.id})">
+        <span class="drag-h">⠿</span>
+        <input type="checkbox" class="task-cb" ${t.done?'checked':''} onchange="window._toggleShop(${t.id})">
+        <div class="task-body" ondblclick="window._edit('shopping',${t.id},this)" style="cursor:text">
+          <div class="task-text ${t.done?'done':''}">${esc(t.text)}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  window._toggleShop = (id) => {
+    const t = tasks.shopping.find(t=>t.id===id);
+    if (t) { t.done=!t.done; renderShopping(); save(); }
   };
 
   window._td = toggleDone;
