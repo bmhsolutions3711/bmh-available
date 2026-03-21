@@ -558,15 +558,29 @@
 
       monthOrder.forEach(mo => {
         html += `<div class="fin-month-label">${mo}</div>`;
-        html += byMonth[mo].map(t=>`
-          <div class="task-item" style="opacity:.45">
-            <span class="drag-h">⠿</span>
-            <input type="checkbox" class="task-cb" checked onchange="window._td('${cat}',${t.id})">
-            <div class="task-body">
-              <div class="task-text done">${esc(t.text)}</div>
-              <div class="task-date">${t.completedDate||t.created||''} · ${t.timeframe||'weekly'}</div>
+        html += byMonth[mo].map(t=>{
+          const subs = t.subtasks || [];
+          const subsHTML = subs.length ? `
+            <div style="padding:4px 0 6px 24px">
+              ${subs.map(s=>`
+                <div style="display:flex;align-items:center;gap:6px;padding:2px 0">
+                  <span style="font-size:10px;color:var(--done)">✓</span>
+                  <span style="font-size:12px;color:var(--done);text-decoration:line-through">${esc(s.text)}</span>
+                </div>`).join('')}
+            </div>` : '';
+          return `
+          <div style="opacity:.45">
+            <div class="task-item">
+              <span class="drag-h">⠿</span>
+              <input type="checkbox" class="task-cb" checked onchange="window._td('${cat}',${t.id})">
+              <div class="task-body">
+                <div class="task-text done">${esc(t.text)}</div>
+                <div class="task-date">${t.completedDate||t.created||''} · ${t.timeframe||'weekly'}${subs.length ? ' · '+subs.length+' subtask'+(subs.length>1?'s':'') : ''}</div>
+              </div>
             </div>
-          </div>`).join('');
+            ${subsHTML}
+          </div>`;
+        }).join('');
       });
 
       el.innerHTML = html;
@@ -595,6 +609,9 @@
       text += `${mo}\n${'-'.repeat(mo.length)}\n`;
       byMonth[mo].forEach(t => {
         text += `  ✓ ${t.text}  [${t.timeframe||'weekly'}]  ${t.completedDate||''}\n`;
+        (t.subtasks||[]).forEach(s => {
+          text += `      • ${s.text}\n`;
+        });
       });
       text += '\n';
     });
