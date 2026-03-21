@@ -220,6 +220,14 @@
         <div class="cat-col-title">💼 Business <span class="cat-count-pill" id="cnt-business">0</span></div>
         <button class="voice-cat" id="vc-business" onclick="startVoice('business')">🎤 Voice</button>
       </div>
+      <div class="add-row" style="border-top:none;border-bottom:1px solid rgba(255,255,255,.05);padding-bottom:8px">
+        <input class="add-input" id="inp-business-top" placeholder="Add task..." onkeydown="catKeyTop(event,'business')">
+        <select id="tf-business-top" style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:7px 5px;color:var(--light);font-size:11px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;flex-shrink:0">
+          <option value="weekly">Week</option>
+          <option value="quarterly">Qtr</option>
+          <option value="annual">Year</option>
+        </select>
+      </div>
       <div id="groups-business"></div>
       <div class="drop-zone" id="drop-business" ondragover="dragOver(event)" ondrop="drop(event,'business')" ondragleave="dragLeave(event)">
         <span class="drop-zone-label">drag here</span>
@@ -247,6 +255,14 @@
         <div class="cat-col-title">👤 Personal <span class="cat-count-pill" id="cnt-personal">0</span></div>
         <button class="voice-cat" id="vc-personal" onclick="startVoice('personal')">🎤 Voice</button>
       </div>
+      <div class="add-row" style="border-top:none;border-bottom:1px solid rgba(255,255,255,.05);padding-bottom:8px">
+        <input class="add-input" id="inp-personal-top" placeholder="Add task..." onkeydown="catKeyTop(event,'personal')">
+        <select id="tf-personal-top" style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:7px 5px;color:var(--light);font-size:11px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;flex-shrink:0">
+          <option value="weekly">Week</option>
+          <option value="quarterly">Qtr</option>
+          <option value="annual">Year</option>
+        </select>
+      </div>
       <div id="groups-personal"></div>
       <div class="drop-zone" id="drop-personal" ondragover="dragOver(event)" ondrop="drop(event,'personal')" ondragleave="dragLeave(event)">
         <span class="drop-zone-label">drag here</span>
@@ -273,6 +289,14 @@
       <div class="cat-col-header">
         <div class="cat-col-title">🙏 Spiritual <span class="cat-count-pill" id="cnt-spiritual">0</span></div>
         <button class="voice-cat" id="vc-spiritual" onclick="startVoice('spiritual')">🎤 Voice</button>
+      </div>
+      <div class="add-row" style="border-top:none;border-bottom:1px solid rgba(255,255,255,.05);padding-bottom:8px">
+        <input class="add-input" id="inp-spiritual-top" placeholder="Add task..." onkeydown="catKeyTop(event,'spiritual')">
+        <select id="tf-spiritual-top" style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:7px 5px;color:var(--light);font-size:11px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;flex-shrink:0">
+          <option value="weekly">Week</option>
+          <option value="quarterly">Qtr</option>
+          <option value="annual">Year</option>
+        </select>
       </div>
       <div id="groups-spiritual"></div>
       <div class="drop-zone" id="drop-spiritual" ondragover="dragOver(event)" ondrop="drop(event,'spiritual')" ondragleave="dragLeave(event)">
@@ -333,6 +357,9 @@
     const el = document.getElementById('syncStatus');
     el.textContent = msg; el.className = 'sync-dot ' + cls;
   }
+
+  // Render empty buckets immediately so UI shows before Firebase loads
+  renderAll();
 
   onSnapshot(REF, snap => {
     if (snap.exists()) {
@@ -541,6 +568,15 @@
       document.getElementById('quickInput').value='';
     }
   };
+  window.catKeyTop = (e, cat) => {
+    if (e.key==='Enter') {
+      const inp = document.getElementById('inp-'+cat+'-top');
+      const tf  = document.getElementById('tf-'+cat+'-top')?.value || 'weekly';
+      addTask(cat, inp.value, tf);
+      inp.value='';
+    }
+  };
+
   window.catKey = (e, cat) => {
     if (e.key==='Enter') {
       const inp = document.getElementById('inp-'+cat);
