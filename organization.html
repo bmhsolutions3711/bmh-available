@@ -443,14 +443,14 @@
     const subDone   = subs.filter(s=>s.done).length;
     const subLabel  = subCount > 0 ? `${subDone}/${subCount}` : '+';
     const subOpen   = window._subOpen && window._subOpen[t.id];
-    const subsHTML  = subCount > 0 ? subs.map((s,i) => `
+    const subsHTML  = `<div class="subtask-list">${subCount > 0 ? subs.map((s,i) => `
       <div class="subtask-item">
         <input type="checkbox" class="subtask-cb" ${s.done?'checked':''} onchange="window._stDone('${cat}',${t.id},${i})">
         <span class="subtask-text ${s.done?'done':''}">${esc(s.text)}</span>
         <button class="subtask-del" onclick="window._stDel('${cat}',${t.id},${i})">✕</button>
-      </div>`).join('') : '';
+      </div>`).join('') : ''}</div>`;
 
-    return `<div>
+    return `<div data-cat="${cat}" data-id="${t.id}">
       <div class="task-item" draggable="true" ondragstart="window._ds(event,'${cat}',${t.id})">
         <span class="drag-h">⠿</span>
         <input type="checkbox" class="task-cb" onchange="window._td('${cat}',${t.id})">
@@ -459,11 +459,12 @@
           ${showDate ? `<div class="task-date">${t.created||''}</div>` : ''}
         </div>
         <button class="subtask-toggle" onclick="window._subToggle(${t.id})">${subLabel} ▾</button>
+        <button class="subtask-del" onclick="window._delTask('${cat}',${t.id})" title="Delete task">✕</button>
       </div>
       ${subOpen ? `<div class="subtask-section">
         ${subsHTML}
         <div class="subtask-add">
-          <input class="subtask-inp" id="st-${t.id}" placeholder="Add subtask..." onkeydown="window._stAdd(event,'${cat}',${t.id})">
+          <input class="subtask-inp" placeholder="Add subtask..." onkeydown="window._stAdd(event,'${cat}',${t.id})">
           <button class="subtask-mic" id="stmic-${t.id}" onclick="window._stVoice('${cat}',${t.id})" title="Voice input">🎤</button>
         </div>
       </div>` : ''}
@@ -483,15 +484,35 @@
 
   window._stAdd = (e, cat, taskId) => {
     if (e.key !== 'Enter') return;
-    const inp = document.getElementById('st-'+taskId);
+    const inp = e.currentTarget;
     if (!inp || !inp.value.trim()) return;
     const t = tasks[cat].find(t=>t.id===taskId);
     if (!t) return;
     if (!t.subtasks) t.subtasks = [];
     t.subtasks.push({ text: inp.value.trim(), done: false });
     inp.value = '';
-    save(); renderAll();
-    setTimeout(() => { const el = document.getElementById('st-'+taskId); if(el) el.focus(); }, 50);
+    save();
+    // Only re-render the subtask list, not the whole page
+    const subs = t.subtasks;
+    const section = inp.closest('.subtask-section');
+    if (section) {
+      const list = section.querySelector('.subtask-list');
+      if (list) {
+        list.innerHTML = subs.map((s,i) => `
+          <div class="subtask-item">
+            <input type="checkbox" class="subtask-cb" ${s.done?'checked':''} onchange="window._stDone('${cat}',${taskId},${i})">
+            <span class="subtask-text ${s.done?'done':''}">${esc(s.text)}</span>
+            <button class="subtask-del" onclick="window._stDel('${cat}',${taskId},${i})">✕</button>
+          </div>`).join('');
+      }
+      // Update toggle button count
+      const toggle = section.closest('div').querySelector('.subtask-toggle');
+      if (toggle) {
+        const done = subs.filter(s=>s.done).length;
+        toggle.textContent = `${done}/${subs.length} ▾`;
+      }
+    }
+    inp.focus();
   };
 
   window._stDone = (cat, taskId, idx) => {
@@ -523,6 +544,12 @@
     rec.onerror = () => showToast('Could not hear — try again');
     rec.onend = () => { btn.classList.remove('listening'); btn.textContent = '🎤'; };
     rec.start();
+  };
+
+  window._delTask = (cat, id) => {
+    tasks[cat] = tasks[cat].filter(t=>t.id!==id);
+    renderAll(); save();
+    showToast('Task deleted');
   };
 
   window._stDel = (cat, taskId, idx) => {
@@ -743,6 +770,106 @@
     renderAll(); save(); showToast('Moved to '+targetCat);
     draggedTask=null; draggedFrom=null;
   };
+
+  // ── Touch Drag Support (mobile) ──
+  let touchDragEl = null;
+  let touchClone  = null;
+
+  function getTouchTarget(x, y) {
+    // Hide clone temporarily to get element underneath
+    if (touchClone) touchClone.style.display = 'none';
+    const el = document.elementFromPoint(x, y);
+    if (touchClone) touchClone.style.display = '';
+    return el;
+  }
+
+  document.addEventListener('touchstart', (e) => {
+    const item = e.target.closest('.task-item');
+    if (!item) return;
+    const cat = item.getAttribute('data-cat') || item.closest('[data-cat]')?.getAttribute('data-cat');
+    const id  = parseInt(item.getAttribute('data-id') || item.closest('[data-id]')?.getAttribute('data-id'));
+    if (!cat || !id) return;
+
+    draggedTask = tasks[cat]?.find(t=>t.id===id);
+    draggedFrom = cat;
+    if (!draggedTask) return;
+
+    touchDragEl = item;
+    const rect = item.getBoundingClientRect();
+    touchClone = item.cloneNode(true);
+    touchClone.style.cssText = `position:fixed;top:${rect.top}px;left:${rect.left}px;width:${rect.width}px;opacity:.75;pointer-events:none;z-index:9999;background:var(--steel);border-radius:8px;`;
+    document.body.appendChild(touchClone);
+    item.style.opacity = '0.3';
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!touchClone || !draggedTask) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    touchClone.style.top  = (touch.clientY - 20) + 'px';
+    touchClone.style.left = (touch.clientX - 60) + 'px';
+
+    // Highlight drop targets
+    document.querySelectorAll('.cat-col, .tf-group, .drop-zone').forEach(el => el.classList.remove('over'));
+    const target = getTouchTarget(touch.clientX, touch.clientY);
+    if (target) {
+      const col     = target.closest('.cat-col');
+      const tfGroup = target.closest('.tf-group');
+      if (tfGroup) tfGroup.classList.add('over');
+      else if (col) col.classList.add('over');
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchend', (e) => {
+    if (!touchClone || !draggedTask) return;
+    const touch = e.changedTouches[0];
+
+    // Clean up visual
+    if (touchDragEl) touchDragEl.style.opacity = '';
+    touchClone.remove();
+    touchClone = null;
+    document.querySelectorAll('.cat-col, .tf-group, .drop-zone').forEach(el => el.classList.remove('over'));
+
+    // Find drop target
+    const target  = getTouchTarget(touch.clientX, touch.clientY);
+    if (!target) { draggedTask=null; draggedFrom=null; return; }
+
+    const tfGroup = target.closest('.tf-group');
+    const col     = target.closest('.cat-col');
+
+    if (tfGroup) {
+      // Drop into timeframe group — figure out cat and tf from context
+      const colEl = tfGroup.closest('.cat-col');
+      const targetCat = colEl?.classList.contains('biz') ? 'business'
+                      : colEl?.classList.contains('per') ? 'personal'
+                      : colEl?.classList.contains('spi') ? 'spiritual' : null;
+      // Find which TF this group is by its dot class
+      const dot = tfGroup.querySelector('.tf-dot');
+      const tf  = dot?.classList.contains('weekly')    ? 'weekly'
+                : dot?.classList.contains('quarterly') ? 'quarterly'
+                : dot?.classList.contains('annual')    ? 'annual' : 'weekly';
+      if (targetCat) {
+        tasks[draggedFrom] = tasks[draggedFrom].filter(t=>t.id!==draggedTask.id);
+        draggedTask.timeframe = tf;
+        tasks[targetCat].unshift(draggedTask);
+        renderAll(); save();
+        showToast('Moved to ' + TF_LABELS[tf]);
+      }
+    } else if (col) {
+      const targetCat = col.classList.contains('biz') ? 'business'
+                      : col.classList.contains('per') ? 'personal'
+                      : col.classList.contains('spi') ? 'spiritual' : null;
+      if (targetCat && targetCat !== draggedFrom) {
+        tasks[draggedFrom] = tasks[draggedFrom].filter(t=>t.id!==draggedTask.id);
+        if (draggedFrom === 'quick') draggedTask.timeframe = 'weekly';
+        tasks[targetCat].unshift(draggedTask);
+        renderAll(); save();
+        showToast('Moved to ' + targetCat);
+      }
+    }
+
+    draggedTask=null; draggedFrom=null;
+  });
 
   // ── TF Drop (within same column) ──
   window._tfOver  = (e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.add('over'); };
