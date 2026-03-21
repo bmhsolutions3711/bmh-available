@@ -343,6 +343,16 @@
       <input class="inp" id="avgspeed" type="number" value="70" inputmode="decimal">
     </div>
   </div>
+  <div class="settings-row">
+    <div class="field" style="margin-bottom:0">
+      <label>🏢 Monthly Overhead ($)</label>
+      <input class="inp" id="overhead" type="number" value="6970" inputmode="decimal">
+    </div>
+    <div class="field" style="margin-bottom:0">
+      <label style="opacity:.6">Daily = overhead ÷ 30</label>
+      <div class="inp" id="dailyOverheadDisplay" style="color:#00D4FF;font-size:13px;display:flex;align-items:center">$232/day</div>
+    </div>
+  </div>
 
   <div class="status-msg" id="statusMsg"></div>
 
@@ -388,6 +398,7 @@
       <div class="bk-row"><span class="bk-label">🍔 Food / Per Diem</span><span class="bk-val" id="bkFood">—</span></div>
       <div class="bk-row"><span class="bk-label">🛣️ Tolls</span><span class="bk-val" id="bkTolls">—</span></div>
       <div class="bk-row"><span class="bk-label">🏨 Lodging</span><span class="bk-val" id="bkLodging">—</span></div>
+      <div class="bk-row"><span class="bk-label">🏢 Fixed Overhead</span><span class="bk-val" id="bkOverhead">—</span></div>
       <div class="bk-row"><span class="bk-label">🔧 Wear &amp; Tear</span><span class="bk-val" id="bkWear">—</span></div>
       <div class="bk-row total"><span class="bk-label">Total Expenses</span><span class="bk-val" id="bkTotal">—</span></div>
     </div>
@@ -533,22 +544,26 @@
   }
 
   function showResults(miles, rate) {
-    const diesel     = parseFloat(document.getElementById('diesel').value) || 3.75;
+    const diesel     = parseFloat(document.getElementById('diesel').value) || 5.00;
     const wearCPM    = parseFloat(document.getElementById('wear').value) || 15;
     const perdiem    = parseFloat(document.getElementById('perdiem').value) || 35;
     const tolls      = parseFloat(document.getElementById('tolls').value) || 0;
     const lodgingNightly = parseFloat(document.getElementById('lodging').value) || 75;
-    const avgSpeed   = parseFloat(document.getElementById('avgspeed').value) || 60;
+    const avgSpeed   = parseFloat(document.getElementById('avgspeed').value) || 70;
+    const monthlyOH  = parseFloat(document.getElementById('overhead').value) || 6970;
+    const dailyOH    = monthlyOH / 30;
 
     const mpg        = MPG[loadType];
     const gallons    = miles / mpg;
     const fuelCost   = gallons * diesel;
     const wearCost   = miles * (wearCPM / 100);
-    // Estimate drive hours; nights = full overnight stops needed (>10hrs = 1 night, etc.)
     const driveHours = miles / avgSpeed;
     const nights     = Math.max(0, Math.floor(driveHours / 10));
     const lodgingCost = nights * lodgingNightly;
-    const totalExp   = fuelCost + perdiem + tolls + wearCost + lodgingCost;
+    // Overhead: pro-rate by days the load consumes (drive time + 0.5 day for pickup/delivery)
+    const loadDays   = Math.max(0.5, driveHours / 24 + 0.5);
+    const overheadCost = loadDays * dailyOH;
+    const totalExp   = fuelCost + perdiem + tolls + wearCost + lodgingCost + overheadCost;
     const netProfit= rate - totalExp;
     const rpm      = rate / miles;
 
@@ -563,8 +578,9 @@
     document.getElementById('bkFood').textContent    = '$' + perdiem.toFixed(2);
     document.getElementById('bkTolls').textContent   = '$' + tolls.toFixed(2);
     document.getElementById('bkWear').textContent    = '$' + wearCost.toFixed(2);
-    document.getElementById('bkLodging').textContent = nights > 0 ? '$' + lodgingCost.toFixed(2) + ' (' + nights + ' night' + (nights>1?'s':'') + ')' : '$0';
-    document.getElementById('bkTotal').textContent   = '$' + totalExp.toFixed(2);
+    document.getElementById('bkLodging').textContent   = nights > 0 ? '$' + lodgingCost.toFixed(2) + ' (' + nights + ' night' + (nights>1?'s':'') + ')' : '$0';
+    document.getElementById('bkOverhead').textContent = '$' + overheadCost.toFixed(2) + ' (' + loadDays.toFixed(1) + ' days @ $' + dailyOH.toFixed(0) + '/day)';
+    document.getElementById('bkTotal').textContent    = '$' + totalExp.toFixed(2);
 
     // Efficiency badge
     const loadLabels = { under: '📦 Under Cab — Best Fuel Efficiency', over: '📐 Over Cab — Reduced MPG', heavy: '⚖️ Heavy Load — Max Drag' };
@@ -613,8 +629,15 @@
     document.getElementById('statusMsg').textContent = msg;
   }
 
+  // ── Update daily overhead display ──
+  function updateDailyDisplay() {
+    const mo = parseFloat(document.getElementById('overhead').value) || 6970;
+    document.getElementById('dailyOverheadDisplay').textContent = '$' + (mo/30).toFixed(0) + '/day';
+  }
+  document.getElementById('overhead').addEventListener('input', updateDailyDisplay);
+
   // ── Persist settings ──
-  const SETTINGS = ['diesel','wear','perdiem','tolls','lodging','avgspeed'];
+  const SETTINGS = ['diesel','wear','perdiem','tolls','lodging','avgspeed','overhead'];
 
   function saveSettings() {
     SETTINGS.forEach(id => {
