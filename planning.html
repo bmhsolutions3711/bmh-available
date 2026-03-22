@@ -51,6 +51,53 @@
     .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#6b7280}
     .legend-dot{width:13px;height:13px;border-radius:3px;flex-shrink:0}
     .footer{text-align:center;font-size:11px;color:#9ca3af;padding:24px;border-top:1px solid #e5e7eb;margin-top:8px}
+    /* ── Roadmap ── */
+    .roadmap-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:0}
+    .roadmap-col{background:#f8fafc;border-radius:10px;padding:12px;min-height:200px}
+    .roadmap-col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .roadmap-col-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#374151}
+    .roadmap-col-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;color:white}
+    .badge-short{background:#1F4E79}.badge-medium{background:#6b21a8}.badge-long{background:#065f46}
+    .roadmap-add{width:100%;padding:8px;background:white;border:1.5px dashed #d1d5db;border-radius:8px;color:#9ca3af;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;margin-bottom:8px}
+    .roadmap-add:hover{border-color:#1F4E79;color:#1F4E79}
+    .roadmap-card{background:white;border:1px solid #e5e7eb;border-radius:8px;padding:11px 12px;margin-bottom:7px;cursor:pointer;transition:all .15s;position:relative;border-left:3px solid transparent}
+    .roadmap-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.08);transform:translateY(-1px)}
+    .roadmap-card.dragging{opacity:.4;transform:scale(.97)}
+    .roadmap-card.drag-over{border-top:2px solid #1F4E79}
+    .roadmap-card.priority-high{border-left-color:#ef4444}
+    .roadmap-card.priority-med{border-left-color:#f59e0b}
+    .roadmap-card.priority-low{border-left-color:#10b981}
+    .rc-title{font-size:13px;font-weight:700;color:#1e293b;margin-bottom:4px;padding-right:18px}
+    .rc-essence{font-size:11px;color:#6b7280;line-height:1.4;margin-bottom:6px}
+    .rc-meta{display:flex;align-items:center;gap:8px;font-size:10px;color:#9ca3af}
+    .rc-tasks-done{color:#10b981;font-weight:700}
+    .rc-delete{position:absolute;top:8px;right:8px;background:none;border:none;color:#d1d5db;cursor:pointer;font-size:13px;opacity:0;transition:opacity .15s}
+    .roadmap-card:hover .rc-delete{opacity:1}
+    /* Modal */
+    .rm-modal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:20px}
+    .rm-modal-overlay.show{display:flex}
+    .rm-modal{background:white;border-radius:14px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.2)}
+    .rm-modal-header{padding:18px 20px 14px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between}
+    .rm-modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#9ca3af}
+    .rm-modal-body{padding:18px 20px}
+    .rm-field{margin-bottom:14px}
+    .rm-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:5px}
+    .rm-inp{width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none;transition:border-color .15s}
+    .rm-inp:focus{border-color:#1F4E79}
+    .rm-textarea{width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:80px;outline:none;transition:border-color .15s}
+    .rm-textarea:focus{border-color:#1F4E79}
+    .rm-task-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f8fafc}
+    .rm-task-cb{width:15px;height:15px;accent-color:#1F4E79;flex-shrink:0}
+    .rm-task-text{flex:1;font-size:13px;color:#374151}
+    .rm-task-text.done{text-decoration:line-through;color:#9ca3af}
+    .rm-task-del{background:none;border:none;color:#d1d5db;cursor:pointer;font-size:12px}
+    .rm-add-task{display:flex;gap:8px;margin-top:8px}
+    .rm-save-btn{width:100%;padding:11px;background:#1F4E79;color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:16px;transition:background .15s}
+    .rm-save-btn:hover{background:#163a5c}
+    .rm-file-row{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px}
+    .rm-file-link{color:#1F4E79;text-decoration:none;flex:1;font-weight:500}
+    .rm-file-link:hover{text-decoration:underline}
+    .rm-select{width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;outline:none;background:white}
     .mantra-bar{background:linear-gradient(135deg,#1F4E79,#0a2a5c);border-radius:10px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
     .mantra-input{flex:1;background:transparent;border:none;outline:none;color:white;font-size:18px;font-weight:600;font-style:italic;font-family:inherit;letter-spacing:.3px}
     .mantra-input::placeholder{color:rgba(255,255,255,.35)}
@@ -64,7 +111,7 @@
     <h1>BMH Solutions LLC — Planning</h1>
     <p>MC: 1700226 &nbsp;·&nbsp; DOT: 04349026 &nbsp;·&nbsp; Hotshot Trucking</p>
   </div>
-  <div class="updated">Last updated<br>March 21, 2026</div>
+  <div class="updated">Last updated<br>March 22, 2026</div>
 </div>
 
 <div class="container">
@@ -152,6 +199,90 @@
 
 </div>
 
+  <!-- Roadmap -->
+  <div class="card" style="margin-top:14px">
+    <h2 style="margin-bottom:4px">🗺️ Product Roadmap</h2>
+    <p style="font-size:12px;color:#6b7280;margin-bottom:14px">Agile scrum-inspired · drag to reprioritize · click to detail</p>
+    <div class="roadmap-grid">
+      <div class="roadmap-col" id="col-short" ondragover="onDragOver(event,'short')" ondrop="onDrop(event,'short')">
+        <div class="roadmap-col-header">
+          <span class="roadmap-col-title">🏃 Short Term</span>
+          <span class="roadmap-col-badge badge-short" id="badge-short">0</span>
+        </div>
+        <button class="roadmap-add" onclick="openNew('short')">＋ Add Item</button>
+        <div id="cards-short"></div>
+      </div>
+      <div class="roadmap-col" id="col-medium" ondragover="onDragOver(event,'medium')" ondrop="onDrop(event,'medium')">
+        <div class="roadmap-col-header">
+          <span class="roadmap-col-title">📈 Medium Term</span>
+          <span class="roadmap-col-badge badge-medium" id="badge-medium">0</span>
+        </div>
+        <button class="roadmap-add" onclick="openNew('medium')">＋ Add Item</button>
+        <div id="cards-medium"></div>
+      </div>
+      <div class="roadmap-col" id="col-long" ondragover="onDragOver(event,'long')" ondrop="onDrop(event,'long')">
+        <div class="roadmap-col-header">
+          <span class="roadmap-col-title">🚀 Long Term</span>
+          <span class="roadmap-col-badge badge-long" id="badge-long">0</span>
+        </div>
+        <button class="roadmap-add" onclick="openNew('long')">＋ Add Item</button>
+        <div id="cards-long"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Roadmap Modal -->
+<div class="rm-modal-overlay" id="rmModal">
+  <div class="rm-modal">
+    <div class="rm-modal-header">
+      <span id="rm-modal-title" style="font-size:16px;font-weight:700;color:#1e293b">New Item</span>
+      <button class="rm-modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="rm-modal-body">
+      <div class="rm-field">
+        <div class="rm-label">Title</div>
+        <input class="rm-inp" id="rm-title" placeholder="What's the initiative?">
+      </div>
+      <div class="rm-field">
+        <div class="rm-label">Essence — the high-level why</div>
+        <input class="rm-inp" id="rm-essence" placeholder="One line describing the value">
+      </div>
+      <div class="rm-field">
+        <div class="rm-label">Priority</div>
+        <select class="rm-select" id="rm-priority">
+          <option value="high">🔴 High</option>
+          <option value="med" selected>🟡 Medium</option>
+          <option value="low">🟢 Low</option>
+        </select>
+      </div>
+      <div class="rm-field">
+        <div class="rm-label">Notes</div>
+        <textarea class="rm-textarea" id="rm-notes" placeholder="Background, context, links, anything..."></textarea>
+      </div>
+      <div class="rm-field">
+        <div class="rm-label">Tasks / Acceptance Criteria</div>
+        <div id="rm-tasks-list"></div>
+        <div class="rm-add-task">
+          <input class="rm-inp" id="rm-new-task" placeholder="Add a task or criterion..." style="flex:1">
+          <button onclick="addModalTask()" style="padding:8px 14px;background:#1F4E79;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px">＋</button>
+        </div>
+      </div>
+      <div class="rm-field">
+        <div class="rm-label">Reference Links</div>
+        <div id="rm-files-list"></div>
+        <div class="rm-add-task">
+          <input class="rm-inp" id="rm-file-name" placeholder="Label" style="flex:1">
+          <input class="rm-inp" id="rm-file-url" placeholder="https://..." style="flex:2">
+          <button onclick="addModalFile()" style="padding:8px 14px;background:#1F4E79;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px">＋</button>
+        </div>
+      </div>
+      <button class="rm-save-btn" onclick="saveModal()">💾 Save Item</button>
+    </div>
+  </div>
+</div>
+
 <div class="footer">
   BMH Solutions LLC &nbsp;·&nbsp; PO Box 563, Green, OH 44232 &nbsp;·&nbsp; 614.704.3088
 </div>
@@ -170,7 +301,7 @@ const BIN_KEY = '$2a$10$ULYp1072ddh26aXQdI9V6.R1eRDeMnw8J.b5MrD3Bkfof1wpKzeRq';
 const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
 // In-memory store — loaded from JSONBin on init
-let DB = { routine: {}, workout: {}, above: {} };
+let DB = { routine: {}, workout: {}, above: {}, roadmap: {short:[], medium:[], long:[]} };
 let saveTimer = null;
 
 async function loadFromCloud() {
@@ -178,9 +309,10 @@ async function loadFromCloud() {
     const r = await fetch(BIN_URL, { headers: { 'X-Master-Key': BIN_KEY } });
     const j = await r.json();
     if (j.record) {
-      DB.routine = j.record.routine || {};
-      DB.workout = j.record.workout || {};
-      DB.above   = j.record.above   || {};
+      DB.routine  = j.record.routine  || {};
+      DB.workout  = j.record.workout  || {};
+      DB.above    = j.record.above    || {};
+      DB.roadmap  = j.record.roadmap  || {short:[], medium:[], long:[]};
     }
   } catch(e) { console.warn('JSONBin load failed', e); }
 }
@@ -368,6 +500,203 @@ document.querySelectorAll('.cal-cell').forEach(cell => {
   });
 });
 
+// ── Roadmap ──────────────────────────────────────────────────────────────────
+let rmCurrentCol  = 'short';
+let rmEditId      = null;
+let rmDragId      = null;
+let rmDragCol     = null;
+let rmModalTasks  = [];
+let rmModalFiles  = [];
+
+function rmId() { return 'rm_' + Date.now() + '_' + Math.random().toString(36).slice(2,6); }
+
+function openNew(col) {
+  rmCurrentCol = col;
+  rmEditId     = null;
+  rmModalTasks = [];
+  rmModalFiles = [];
+  document.getElementById('rm-title').value    = '';
+  document.getElementById('rm-essence').value  = '';
+  document.getElementById('rm-notes').value    = '';
+  document.getElementById('rm-priority').value = 'med';
+  document.getElementById('rm-new-task').value = '';
+  document.getElementById('rm-file-name').value = '';
+  document.getElementById('rm-file-url').value  = '';
+  document.getElementById('rm-modal-title').textContent = 'New Item';
+  renderModalTasks();
+  renderModalFiles();
+  document.getElementById('rmModal').classList.add('show');
+  setTimeout(() => document.getElementById('rm-title').focus(), 100);
+}
+
+function openEdit(col, id) {
+  const item = DB.roadmap[col].find(x => x.id === id);
+  if (!item) return;
+  rmCurrentCol = col;
+  rmEditId     = id;
+  rmModalTasks = JSON.parse(JSON.stringify(item.tasks || []));
+  rmModalFiles = JSON.parse(JSON.stringify(item.files || []));
+  document.getElementById('rm-title').value    = item.title || '';
+  document.getElementById('rm-essence').value  = item.essence || '';
+  document.getElementById('rm-notes').value    = item.notes || '';
+  document.getElementById('rm-priority').value = item.priority || 'med';
+  document.getElementById('rm-modal-title').textContent = 'Edit Item';
+  renderModalTasks();
+  renderModalFiles();
+  document.getElementById('rmModal').classList.add('show');
+}
+
+function closeModal() { document.getElementById('rmModal').classList.remove('show'); }
+document.getElementById('rmModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+function addModalTask() {
+  const inp = document.getElementById('rm-new-task');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  rmModalTasks.push({id: rmId(), text: txt, done: false});
+  inp.value = '';
+  renderModalTasks();
+}
+document.getElementById('rm-new-task').addEventListener('keydown', e => { if(e.key==='Enter') addModalTask(); });
+
+function toggleModalTask(id) {
+  const t = rmModalTasks.find(x => x.id === id);
+  if (t) { t.done = !t.done; renderModalTasks(); }
+}
+function deleteModalTask(id) {
+  rmModalTasks = rmModalTasks.filter(x => x.id !== id);
+  renderModalTasks();
+}
+function renderModalTasks() {
+  document.getElementById('rm-tasks-list').innerHTML = rmModalTasks.map(t => `
+    <div class="rm-task-row">
+      <input type="checkbox" class="rm-task-cb" ${t.done?'checked':''} onchange="toggleModalTask('${t.id}')">
+      <span class="rm-task-text ${t.done?'done':''}">${t.text}</span>
+      <button class="rm-task-del" onclick="deleteModalTask('${t.id}')">✕</button>
+    </div>`).join('');
+}
+
+function addModalFile() {
+  const name = document.getElementById('rm-file-name').value.trim();
+  const url  = document.getElementById('rm-file-url').value.trim();
+  if (!url) return;
+  rmModalFiles.push({id: rmId(), name: name || url, url});
+  document.getElementById('rm-file-name').value = '';
+  document.getElementById('rm-file-url').value  = '';
+  renderModalFiles();
+}
+function deleteModalFile(id) {
+  rmModalFiles = rmModalFiles.filter(x => x.id !== id);
+  renderModalFiles();
+}
+function renderModalFiles() {
+  document.getElementById('rm-files-list').innerHTML = rmModalFiles.map(f => `
+    <div class="rm-file-row">
+      <a class="rm-file-link" href="${f.url}" target="_blank">📎 ${f.name}</a>
+      <button class="rm-task-del" onclick="deleteModalFile('${f.id}')">✕</button>
+    </div>`).join('');
+}
+
+function saveModal() {
+  const title = document.getElementById('rm-title').value.trim();
+  if (!title) { alert('Add a title'); return; }
+  const item = {
+    id:       rmEditId || rmId(),
+    title,
+    essence:  document.getElementById('rm-essence').value.trim(),
+    notes:    document.getElementById('rm-notes').value.trim(),
+    priority: document.getElementById('rm-priority').value,
+    tasks:    rmModalTasks,
+    files:    rmModalFiles,
+    created:  rmEditId ? (DB.roadmap[rmCurrentCol].find(x=>x.id===rmEditId)||{}).created || Date.now() : Date.now()
+  };
+  if (rmEditId) {
+    const idx = DB.roadmap[rmCurrentCol].findIndex(x => x.id === rmEditId);
+    if (idx > -1) DB.roadmap[rmCurrentCol][idx] = item;
+  } else {
+    DB.roadmap[rmCurrentCol].unshift(item);
+  }
+  saveToCloud();
+  renderRoadmap();
+  closeModal();
+}
+
+function deleteRoadmapItem(col, id, e) {
+  e.stopPropagation();
+  if (!confirm('Delete this item?')) return;
+  DB.roadmap[col] = DB.roadmap[col].filter(x => x.id !== id);
+  saveToCloud();
+  renderRoadmap();
+}
+
+function renderRoadmap() {
+  ['short','medium','long'].forEach(col => {
+    const items = DB.roadmap[col] || [];
+    document.getElementById('badge-' + col).textContent = items.length;
+    document.getElementById('cards-' + col).innerHTML = items.map(item => {
+      const done  = (item.tasks||[]).filter(t=>t.done).length;
+      const total = (item.tasks||[]).length;
+      return `<div class="roadmap-card priority-${item.priority||'med'}"
+        draggable="true"
+        ondragstart="onDragStart(event,'${col}','${item.id}')"
+        ondragend="onDragEnd(event)"
+        onclick="openEdit('${col}','${item.id}')">
+        <button class="rc-delete" onclick="deleteRoadmapItem('${col}','${item.id}',event)">✕</button>
+        <div class="rc-title">${item.title}</div>
+        ${item.essence ? `<div class="rc-essence">${item.essence}</div>` : ''}
+        <div class="rc-meta">
+          ${total > 0 ? `<span class="rc-tasks-done">${done}/${total} tasks</span>` : ''}
+          ${item.notes ? '<span>📝 Notes</span>' : ''}
+          ${(item.files||[]).length > 0 ? `<span>📎 ${item.files.length}</span>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  });
+}
+
+// ── Drag & drop ──
+function onDragStart(e, col, id) {
+  rmDragId  = id;
+  rmDragCol = col;
+  setTimeout(() => e.target.classList.add('dragging'), 0);
+}
+function onDragEnd(e) {
+  e.target.classList.remove('dragging');
+  document.querySelectorAll('.roadmap-card').forEach(c => c.classList.remove('drag-over'));
+}
+function onDragOver(e, col) {
+  e.preventDefault();
+  const cards = document.querySelectorAll('#cards-' + col + ' .roadmap-card');
+  cards.forEach(c => c.classList.remove('drag-over'));
+  const target = e.target.closest('.roadmap-card');
+  if (target) target.classList.add('drag-over');
+}
+function onDrop(e, col) {
+  e.preventDefault();
+  if (!rmDragId) return;
+  // Find item
+  let item = null;
+  DB.roadmap[rmDragCol] = DB.roadmap[rmDragCol].filter(x => { if(x.id===rmDragId){ item=x; return false; } return true; });
+  if (!item) return;
+  // Find drop position
+  const target = e.target.closest('.roadmap-card');
+  const destItems = DB.roadmap[col];
+  if (target) {
+    const targetId = target.onclick?.toString().match(/'([^']+)'\)$/)?.[1];
+    const idx = destItems.findIndex(x => x.id === targetId);
+    if (idx > -1) destItems.splice(idx, 0, item);
+    else destItems.push(item);
+  } else {
+    destItems.push(item);
+  }
+  document.querySelectorAll('.roadmap-card').forEach(c => c.classList.remove('drag-over'));
+  saveToCloud();
+  renderRoadmap();
+  rmDragId = null; rmDragCol = null;
+}
+
 // ── Mantra persistence ───────────────────────────────────────────────────────
 const mantraInput = document.getElementById('mantraInput');
 mantraInput.value = localStorage.getItem('bmh_mantra') || '';
@@ -406,6 +735,7 @@ async function init() {
 
   loadRoutineUI();
   updateCalendar();
+  renderRoadmap();
 }
 init();
 </script>
