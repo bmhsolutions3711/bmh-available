@@ -60,7 +60,7 @@
 <div class="header">
   <div>
     <h1>☀️ BMH Morning Briefing</h1>
-    <div class="date">Friday, March 20, 2026</div>
+    <div class="date">Saturday, March 21, 2026</div>
   </div>
   <button class="play-btn" id="play-btn" onclick="toggleBriefing()">▶ Play Briefing</button>
 </div>
@@ -100,7 +100,7 @@
 
 <script>
 const OWM_KEY = '2100c08faa7729bbd1d620c0f8b7d104';
-const HUBS = [{"name": "Ohio Valley", "city": "North Canton", "state": "OH", "lat": 40.8759, "lon": -81.4026}, {"name": "Southeast", "city": "Atlanta", "state": "GA", "lat": 33.749, "lon": -84.388}, {"name": "Southwest", "city": "Phoenix", "state": "AZ", "lat": 33.4484, "lon": -112.074}, {"name": "Texas", "city": "Dallas", "state": "TX", "lat": 32.7767, "lon": -96.797}, {"name": "Plains", "city": "Saint Louis", "state": "MO", "lat": 38.627, "lon": -90.1994}, {"name": "Mountain", "city": "Denver", "state": "CO", "lat": 39.7392, "lon": -104.9903}, {"name": "Northwest", "city": "Boise", "state": "ID", "lat": 43.615, "lon": -116.2023}, {"name": "East Coast", "city": "Newark", "state": "NJ", "lat": 40.7357, "lon": -74.1724}];
+const HUBS = [{"name": "Home", "city": "North Canton", "state": "OH", "lat": 40.8759, "lon": -81.4026}, {"name": "Southeast", "city": "Atlanta", "state": "GA", "lat": 33.749, "lon": -84.388}, {"name": "Texas", "city": "Dallas", "state": "TX", "lat": 32.7767, "lon": -96.797}, {"name": "Southwest", "city": "Phoenix", "state": "AZ", "lat": 33.4484, "lon": -112.074}, {"name": "Plains", "city": "St. Louis", "state": "MO", "lat": 38.627, "lon": -90.1994}, {"name": "East Coast", "city": "Newark", "state": "NJ", "lat": 40.7357, "lon": -74.1724}, {"name": "Mountain", "city": "Denver", "state": "CO", "lat": 39.7392, "lon": -104.9903}, {"name": "Northwest", "city": "Boise", "state": "ID", "lat": 43.615, "lon": -116.2023}];
 
 const WX_ICONS = {
   'Clear': '☀️', 'Clouds': '☁️', 'Rain': '🌧️', 'Drizzle': '🌦️',
@@ -361,12 +361,18 @@ function setRadarMode(mode) {
 
   if (!radarData) return;
 
-  const frames = mode === 'past'
-    ? (radarData.radar.past || [])
-    : (radarData.radar.nowcast || []);
+  let frames = [];
+  if (mode === 'past') {
+    frames = radarData.radar.past || [];
+  } else {
+    // Try nowcast first, fall back to satellite if empty
+    frames = (radarData.radar.nowcast && radarData.radar.nowcast.length)
+      ? radarData.radar.nowcast
+      : (radarData.satellite && radarData.satellite.infrared ? radarData.satellite.infrared.slice(-6) : []);
+  }
 
   if (!frames.length) {
-    document.getElementById('radar-label').textContent = 'Forecast data not available yet — try again shortly';
+    document.getElementById('radar-label').textContent = 'Forecast not available right now — check back shortly';
     return;
   }
 
