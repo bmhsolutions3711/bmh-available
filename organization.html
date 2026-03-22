@@ -523,6 +523,8 @@
     const t = tasks[cat].find(t=>t.id===taskId);
     if (t && t.subtasks && t.subtasks[idx]) {
       t.subtasks[idx].done = !t.subtasks[idx].done;
+      // Move done items to bottom, preserve order within each group
+      t.subtasks.sort((a, b) => (a.done ? 1 : 0) - (b.done ? 1 : 0));
       save(); renderAll();
     }
   };
