@@ -170,7 +170,7 @@
     <p>MC: 1700226 &nbsp;·&nbsp; DOT: 04349026 &nbsp;·&nbsp; Hotshot Trucking</p>
   </div>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
-    <div class="updated">Last updated<br>03/22/2026 12:06 PM</div>
+    <div class="updated">Last updated<br>03/22/2026 12:12 PM</div>
     <a href="operations.html?sync=1" style="background:#1F4E79;color:white;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;text-decoration:none">🔄 Sync Dashboard</a>
   </div>
 </div>
@@ -191,7 +191,7 @@
   <div class="kpi-grid">
     <div class="kpi">
       <div class="label">YTD Revenue</div>
-      <div class="value">$26,275</div>
+      <div class="value">$27,975</div>
       <div class="sub" style="font-size:14px;font-weight:600;color:#374151">$7,450 month to date</div>
     </div>
     <div class="kpi">
@@ -201,12 +201,12 @@
     </div>
     <div class="kpi">
       <div class="label">YTD Net Profit</div>
-      <div class="value" style="color:#dc2626">$-11,539</div>
+      <div class="value" style="color:#dc2626">$-9,839</div>
       <div class="sub">revenue minus expenses</div>
     </div>
     <div class="kpi">
       <div class="label">Open Invoices</div>
-      <div class="value" style="color:#1F4E79;font-size:28px">9 / $7,625</div>
+      <div class="value" style="color:#1F4E79;font-size:28px">10 / $9,325</div>
       <div class="sub">unpaid invoices</div>
     </div>
 
@@ -249,7 +249,7 @@
 
   <!-- Open Invoices Table -->
   <div class="card" style="margin-bottom:24px">
-    <h2>Open Invoices <span class="badge badge-open">9 pending</span><span style="float:right;font-size:16px;font-weight:700;color:#92400e">$7,625.00 outstanding</span></h2>
+    <h2>Open Invoices <span class="badge badge-open">10 pending</span><span style="float:right;font-size:16px;font-weight:700;color:#92400e">$9,325.00 outstanding</span></h2>
     <div class="table-wrap">
       <table>
         <thead>
@@ -291,6 +291,15 @@
           <td>02-17-2026</td>
           <td>$350.00</td>
           <td><a href="http://localhost:9876/open?path=/Users/bmhsolutionsllc/Library/CloudStorage/GoogleDrive-bmhsolutions3711@gmail.com/My%20Drive/BMH%20Solutions/Loads/2026/35597795%20-%20TQL%20-%20Total%20Quality%20Logistics%20-%20Bedford%20Heights,%20OH%20to%20Moline,%20IL" target="_blank" title="/Users/bmhsolutionsllc/Library/CloudStorage/GoogleDrive-bmhsolutions3711@gmail.com/My Drive/BMH Solutions/Loads/2026/35597795 - TQL - Total Quality Logistics - Bedford Heights, OH to Moline, IL" style="color:#1F4E79;font-weight:600">📁 View</a></td>
+        </tr>
+        <tr>
+          <td>BH123456</td>
+          <td>Nationwide Logistics (NWL)</td>
+          <td>ORWELL / CANTON, OH → ELWOOD, KS</td>
+          <td>02/19/2026</td>
+          <td>02/23/2026</td>
+          <td>$1,700.00</td>
+          <td><a href="http://localhost:9876/open?path=/Users/bryanhertzig/Library/CloudStorage/GoogleDrive-bmhsolutions3711@gmail.com/My%20Drive/BMH%20Solutions/Loads/2026/26_03_22%20-%20BH123456%20-%20Nationwide%20Logistics%20(NWL)%20-%20ORWELL%20%20CANTON,%20OH%20to%20ELWOOD," target="_blank" title="/Users/bryanhertzig/Library/CloudStorage/GoogleDrive-bmhsolutions3711@gmail.com/My Drive/BMH Solutions/Loads/2026/26_03_22 - BH123456 - Nationwide Logistics (NWL) - ORWELL  CANTON, OH to ELWOOD," style="color:#1F4E79;font-weight:600">📁 View</a></td>
         </tr>
         <tr>
           <td>6029</td>
@@ -514,7 +523,7 @@ new Chart(document.getElementById('revenueChart'), {
     labels: ["Jan", "Feb", "Mar"],
     datasets: [{
       label: 'Revenue ($)',
-      data: [8900.0, 9925.0, 7450.0],
+      data: [8900.0, 11625.0, 7450.0],
       backgroundColor: NAVY,
       borderRadius: 6,
     }]
@@ -540,10 +549,10 @@ new Chart(document.getElementById('revenueChart'), {
 new Chart(document.getElementById('brokerChart'), {
   type: 'bar',
   data: {
-    labels: ["Fifth Wheel Freight, LLC", "Freight Advisors Logistics Corporation", "Trinity Logistics, Inc.", "NWL (Nationwide Logistics)", "Capital Logistics, LLC"],
+    labels: ["Fifth Wheel Freight, LLC", "Freight Advisors Logistics Corporation", "Trinity Logistics, Inc.", "Nationwide Logistics (NWL)", "NWL (Nationwide Logistics)"],
     datasets: [{
       label: 'Revenue ($)',
-      data: [3300.0, 2250.0, 2200.0, 1700.0, 1400.0],
+      data: [3300.0, 2250.0, 2200.0, 2150.0, 1700.0],
       backgroundColor: [NAVY, '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd'],
       borderRadius: 6,
     }]
@@ -573,7 +582,7 @@ new Chart(document.getElementById('loadChart'), {
     labels: ["Jan", "Feb", "Mar"],
     datasets: [{
       label: 'Loads',
-      data: [10, 12, 7],
+      data: [10, 13, 7],
       borderColor: NAVY,
       backgroundColor: LIGHT,
       fill: true,
@@ -652,7 +661,7 @@ new Chart(document.getElementById('plChart'), {
     datasets: [
       {
         label: 'Revenue',
-        data: [8900.0, 9925.0, 7450.0],
+        data: [8900.0, 11625.0, 7450.0],
         backgroundColor: NAVY,
         borderRadius: 4,
       },
@@ -664,7 +673,7 @@ new Chart(document.getElementById('plChart'), {
       },
       {
         label: 'Net Profit',
-        data: [-4377.769999999997, -4629.319999999998, -2531.470000000001],
+        data: [-4377.769999999997, -2929.319999999998, -2531.470000000001],
         backgroundColor: '#16a34a',
         borderRadius: 4,
       }
