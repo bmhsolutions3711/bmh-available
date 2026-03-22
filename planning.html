@@ -51,6 +51,10 @@
     .legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:#6b7280}
     .legend-dot{width:13px;height:13px;border-radius:3px;flex-shrink:0}
     .footer{text-align:center;font-size:11px;color:#9ca3af;padding:24px;border-top:1px solid #e5e7eb;margin-top:8px}
+    .mantra-bar{background:linear-gradient(135deg,#1F4E79,#0a2a5c);border-radius:10px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+    .mantra-input{flex:1;background:transparent;border:none;outline:none;color:white;font-size:18px;font-weight:600;font-style:italic;font-family:inherit;letter-spacing:.3px}
+    .mantra-input::placeholder{color:rgba(255,255,255,.35)}
+    .mantra-icon{font-size:22px;flex-shrink:0}
   </style>
 </head>
 <body>
@@ -74,6 +78,12 @@
     <a href="organization.html" class="nav-btn inactive">&#9989; Tasks</a>
   </div>
 
+  <!-- Mantra -->
+  <div class="mantra-bar">
+    <span class="mantra-icon">💬</span>
+    <input class="mantra-input" id="mantraInput" placeholder="Type your motivational mantra here..." maxlength="200">
+  </div>
+
   <!-- Morning Routine Widget -->
   <div class="card">
     <h2>&#127775; Morning Routine &amp; Workout</h2>
@@ -86,16 +96,27 @@
           <span id="routine-date-display"></span>
           <button onclick="shiftDay(1)">&#8594;</button>
         </div>
-        <ul class="checklist">
-          <li><input type="checkbox" id="chk-0" onchange="saveRoutine()"> <label for="chk-0">&#127470;&#127477; Serenity Prayer</label></li>
-          <li><input type="checkbox" id="chk-1" onchange="saveRoutine()"> <label for="chk-1">&#128138; Meds</label></li>
-          <li><input type="checkbox" id="chk-2" onchange="saveRoutine()"> <label for="chk-2">&#129457; Brush Teeth</label></li>
-          <li><input type="checkbox" id="chk-3" onchange="saveRoutine()"> <label for="chk-3">&#129496; 5 Min Quiet Time</label></li>
-          <li><input type="checkbox" id="chk-4" onchange="saveRoutine()"> <label for="chk-4">&#128221; 5 Minute Journal</label></li>
-        </ul>
-        <div class="score-bar"><div class="score-fill" id="score-fill" style="width:0%"></div></div>
-        <div class="score-label" id="score-label">0 / 5 completed</div>
-        <button class="above-btn" id="above-btn" onclick="toggleAbove()">&#9711; Above &amp; Beyond</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:8px">🌅 Morning Routine</div>
+            <ul class="checklist">
+              <li><input type="checkbox" id="chk-0" onchange="saveRoutine()"> <label for="chk-0">&#127470;&#127477; Serenity Prayer</label></li>
+              <li><input type="checkbox" id="chk-1" onchange="saveRoutine()"> <label for="chk-1">&#128138; Meds</label></li>
+              <li><input type="checkbox" id="chk-2" onchange="saveRoutine()"> <label for="chk-2">&#129457; Brush Teeth</label></li>
+            </ul>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;margin-bottom:8px">☀️ Daily Routine</div>
+            <ul class="checklist">
+              <li><input type="checkbox" id="chk-3" onchange="saveRoutine()"> <label for="chk-3">🚿 Take a Shower</label></li>
+              <li><input type="checkbox" id="chk-4" onchange="saveRoutine()"> <label for="chk-4">&#129496; 5 Min Quiet Time</label></li>
+              <li><input type="checkbox" id="chk-5" onchange="saveRoutine()"> <label for="chk-5">&#128221; 5 Min Journal</label></li>
+              <li><input type="checkbox" id="chk-6" onchange="saveRoutine()"> <label for="chk-6">&#128218; Read 1 Page</label></li>
+            </ul>
+          </div>
+        </div>
+        <div class="score-bar" style="margin-top:10px"><div class="score-fill" id="score-fill" style="width:0%"></div></div>
+        <div class="score-label" id="score-label">0 / 7 completed</div>
       </div>
 
       <!-- Workout -->
@@ -123,9 +144,9 @@
       <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div> Workout</div>
       <div class="legend-item"><div class="legend-dot" style="background:#00cfff"></div> Today</div>
       <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Fall Back Zone</div>
-      <div class="legend-item"><span style="font-size:11px;font-weight:700">✓</span>&nbsp;Full Routine</div>
-      <div class="legend-item"><span style="font-size:11px;font-weight:700">½</span>&nbsp;Partial</div>
-      <div class="legend-item"><span style="font-size:11px;font-weight:700">✓+</span>&nbsp;Above &amp; Beyond</div>
+      <div class="legend-item"><span style="font-size:11px;font-weight:700">✓+</span>&nbsp;Full Day (All 7)</div>
+      <div class="legend-item"><span style="font-size:11px;font-weight:700">✓</span>&nbsp;Morning Complete</div>
+      <div class="legend-item"><span style="font-size:11px;font-weight:700">½</span>&nbsp;Partial Morning</div>
     </div>
   </div>
 
@@ -136,7 +157,9 @@
 </div>
 
 <script>
-const TOTAL_ITEMS  = 5;
+const MORNING_ITEMS = 3;  // chk-0,1,2 — used for ½ logic
+const DAILY_ITEMS   = 4;  // chk-3,4,5,6
+const TOTAL_ITEMS   = 7;  // all items
 const LOAD_DATES   = {"2026-01-06": {"pickup": 1, "delivery": 0}, "2026-01-07": {"pickup": 0, "delivery": 1}, "2026-01-09": {"pickup": 1, "delivery": 0}, "2026-01-12": {"pickup": 1, "delivery": 1}, "2026-01-14": {"pickup": 0, "delivery": 1}, "2026-01-15": {"pickup": 1, "delivery": 0}, "2026-01-16": {"pickup": 1, "delivery": 1}, "2026-01-19": {"pickup": 0, "delivery": 1}, "2026-01-20": {"pickup": 1, "delivery": 0}, "2026-01-22": {"pickup": 1, "delivery": 1}, "2026-01-23": {"pickup": 1, "delivery": 1}, "2026-01-26": {"pickup": 1, "delivery": 2}, "2026-01-28": {"pickup": 1, "delivery": 0}, "2026-01-29": {"pickup": 1, "delivery": 1}, "2026-02-02": {"pickup": 0, "delivery": 2}, "2026-01-30": {"pickup": 1, "delivery": 0}, "2026-02-04": {"pickup": 1, "delivery": 0}, "2026-02-05": {"pickup": 0, "delivery": 2}, "2026-02-03": {"pickup": 1, "delivery": 0}, "2026-02-11": {"pickup": 1, "delivery": 0}, "2026-02-12": {"pickup": 1, "delivery": 1}, "2026-02-13": {"pickup": 1, "delivery": 1}, "2026-02-16": {"pickup": 1, "delivery": 1}, "2026-02-17": {"pickup": 1, "delivery": 2}, "2026-02-19": {"pickup": 1, "delivery": 0}, "2026-02-23": {"pickup": 0, "delivery": 1}, "2026-02-24": {"pickup": 1, "delivery": 0}, "2026-02-25": {"pickup": 0, "delivery": 1}, "2026-02-26": {"pickup": 1, "delivery": 0}, "2026-02-27": {"pickup": 1, "delivery": 1}, "2026-03-02": {"pickup": 0, "delivery": 1}, "2026-03-03": {"pickup": 1, "delivery": 0}, "2026-03-05": {"pickup": 0, "delivery": 1}, "2026-03-09": {"pickup": 1, "delivery": 0}, "2026-03-10": {"pickup": 1, "delivery": 1}, "2026-03-12": {"pickup": 1, "delivery": 1}, "2026-03-14": {"pickup": 0, "delivery": 1}, "2026-03-16": {"pickup": 1, "delivery": 0}, "2026-03-17": {"pickup": 0, "delivery": 1}, "2026-03-19": {"pickup": 1, "delivery": 1}};
 const TODAY        = new Date().toISOString().slice(0, 10);
 let   activeDate   = TODAY;
@@ -225,10 +248,7 @@ function loadRoutineUI() {
   const btn = document.getElementById('workout-btn');
   btn.textContent = wo ? '✓ Worked Out!' : '✗ No Workout';
   btn.className   = 'workout-btn' + (wo ? ' active' : '');
-  const ab = getAbove(activeDate);
-  const abtn = document.getElementById('above-btn');
-  abtn.textContent = ab ? '✓+ Above & Beyond!' : '+ Above & Beyond';
-  abtn.className   = 'above-btn' + (ab ? ' active' : '');
+
 }
 
 function saveRoutine() {
@@ -243,10 +263,13 @@ function saveRoutine() {
 
 function updateScore() {
   const checked = getRoutine(activeDate);
-  const n   = checked.length;
-  const pct = Math.round(n / TOTAL_ITEMS * 100);
+  const morningDone = [0,1,2].filter(i => checked.includes(i)).length;
+  const dailyDone   = [3,4,5,6].filter(i => checked.includes(i)).length;
+  const total = checked.length;
+  const pct   = Math.round(total / TOTAL_ITEMS * 100);
   document.getElementById('score-fill').style.width  = pct + '%';
-  document.getElementById('score-label').textContent = n + ' / ' + TOTAL_ITEMS + ' completed';
+  document.getElementById('score-label').textContent =
+    `Morning ${morningDone}/3  ·  Daily ${dailyDone}/4  ·  Total ${total}/7`;
 }
 
 function toggleAbove() {
@@ -265,11 +288,13 @@ function toggleWorkout() {
 // ── Calendar coloring ────────────────────────────────────────────────────────
 function routineIndicator(dateStr) {
   const checked = getRoutine(dateStr);
-  const n = checked.length;
-  const above = getAbove(dateStr);
-  if (above)             return '✓+';
-  if (n === TOTAL_ITEMS) return '✓';
-  if (n > 0)             return '½';
+  // Morning items are indices 0,1,2 — daily are 3,4,5,6
+  const morningDone = [0,1,2].every(i => checked.includes(i));
+  const dailyDone   = [3,4,5,6].every(i => checked.includes(i));
+  const anyMorning  = [0,1,2].some(i => checked.includes(i));
+  if (morningDone && dailyDone) return '✓+';  // all done = check+
+  if (morningDone)              return '✓';   // morning complete = check
+  if (anyMorning)               return '½';   // partial morning = half
   return '';
 }
 
@@ -341,6 +366,13 @@ document.querySelectorAll('.cal-cell').forEach(cell => {
     loadRoutineUI();
     updateCalendar();
   });
+});
+
+// ── Mantra persistence ───────────────────────────────────────────────────────
+const mantraInput = document.getElementById('mantraInput');
+mantraInput.value = localStorage.getItem('bmh_mantra') || '';
+mantraInput.addEventListener('input', () => {
+  localStorage.setItem('bmh_mantra', mantraInput.value);
 });
 
 // ── Init ─────────────────────────────────────────────────────────────────────
