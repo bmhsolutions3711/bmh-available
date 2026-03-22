@@ -102,6 +102,7 @@
     }
     .tf-group-label .tf-dot { width:6px; height:6px; border-radius:50%; }
     .tf-dot.weekly    { background:var(--weekly); }
+    .tf-dot.monthly   { background:#10B981; }
     .tf-dot.quarterly { background:var(--quarterly); }
     .tf-dot.annual    { background:var(--annual); }
 
@@ -245,6 +246,7 @@
         <input class="add-input" id="inp-business-top" placeholder="Add task..." onkeydown="catKeyTop(event,'business')">
         <select id="tf-business-top" style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:7px 5px;color:var(--light);font-size:11px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;flex-shrink:0">
           <option value="weekly">Week</option>
+          <option value="monthly">Month</option>
           <option value="quarterly">Qtr</option>
           <option value="annual">Year</option>
         </select>
@@ -273,6 +275,7 @@
         <input class="add-input" id="inp-personal-top" placeholder="Add task..." onkeydown="catKeyTop(event,'personal')">
         <select id="tf-personal-top" style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:7px 5px;color:var(--light);font-size:11px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;flex-shrink:0">
           <option value="weekly">Week</option>
+          <option value="monthly">Month</option>
           <option value="quarterly">Qtr</option>
           <option value="annual">Year</option>
         </select>
@@ -301,6 +304,7 @@
         <input class="add-input" id="inp-spiritual-top" placeholder="Add task..." onkeydown="catKeyTop(event,'spiritual')">
         <select id="tf-spiritual-top" style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:7px 5px;color:var(--light);font-size:11px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;flex-shrink:0">
           <option value="weekly">Week</option>
+          <option value="monthly">Month</option>
           <option value="quarterly">Qtr</option>
           <option value="annual">Year</option>
         </select>
@@ -342,8 +346,8 @@
   const db  = getFirestore(app);
   const REF = doc(db, 'tasks', 'bmh');
 
-  const TIMEFRAMES = ['weekly','quarterly','annual'];
-  const TF_LABELS  = { weekly:'This Week', quarterly:'This Quarter', annual:'This Year' };
+  const TIMEFRAMES = ['weekly','monthly','quarterly','annual'];
+  const TF_LABELS  = { weekly:'This Week', monthly:'This Month', quarterly:'This Quarter', annual:'This Year' };
 
   let tasks = { quick:[], business:[], personal:[], spiritual:[], shopping:[] };
   let saveTimer = null;
