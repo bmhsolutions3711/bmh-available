@@ -173,16 +173,17 @@
         </div>
       </a>
     </div>
-    <div style="margin-top:12px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-        <button class="script-btn" onclick="sendEmailByLoad('preview', this)" style="display:flex;align-items:center;justify-content:center;gap:6px">
-          <span>👁️</span> Preview Email
-        </button>
-        <button class="script-btn" onclick="sendEmailByLoad('send', this)" style="display:flex;align-items:center;justify-content:center;gap:6px;background:#dcfce7;border-color:#16a34a;color:#15803d">
-          <span>📧</span> Send Email
-        </button>
-      </div>
-    </div>
+    
+  </div>
+
+  <!-- Email Actions -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+    <button class="script-btn" onclick="sendEmailByLoad('preview', this)" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:14px">
+      <span>👁️</span> Preview Email
+    </button>
+    <button class="script-btn" onclick="sendEmailByLoad('send', this)" style="display:flex;align-items:center;justify-content:center;gap:6px;background:#dcfce7;border-color:#16a34a;color:#15803d;padding:14px">
+      <span>📧</span> Send Email
+    </button>
   </div>
 
   <!-- Dashboard & Sync -->
@@ -604,6 +605,17 @@ async function updateAvailability(btn) {
     btn.disabled = false;
   }
 }
+
+function sendEmailByLoad(mode, btn) {{
+  const loadCard = document.querySelector('[data-load-number]');
+  let loadNum = loadCard ? loadCard.getAttribute('data-load-number') : '';
+  if (!loadNum || loadNum === 'None' || loadNum === '' || loadNum === 'undefined') {{
+    loadNum = prompt('Enter Load Number:');
+    if (!loadNum) return;
+  }}
+  const endpoint = mode === 'preview' ? 'preview-email-load' : 'send-email-load';
+  runScriptWithRow(endpoint, loadNum.trim(), btn);
+}}
 </script>
 
 </body>
