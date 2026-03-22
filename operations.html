@@ -101,6 +101,13 @@
 
   </div>
 
+  <!-- Evaluate a Load -->
+  <div style="margin-bottom:16px">
+    <a href="https://theaitrucker.io/loadcalc.html" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#f0f4f8;border:1.5px solid #1F4E79;color:#1F4E79;text-decoration:none;border-radius:8px;padding:14px 16px;font-weight:700;font-size:15px">
+      <span style="font-size:20px">⚡</span> Evaluate a Load
+    </a>
+  </div>
+
 
   <!-- Current Load -->
   <div class="card" style="border-left:4px solid #1F4E79" data-load-number="BH123456">
@@ -167,9 +174,6 @@
       </a>
     </div>
     <div style="margin-top:12px">
-      <a href="https://theaitrucker.io/loadcalc.html" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#f0f4f8;border:1.5px solid #1F4E79;color:#1F4E79;text-decoration:none;border-radius:8px;padding:12px 16px;font-weight:700;font-size:14px">
-        <span style="font-size:18px">⚡</span> Evaluate a Load
-      </a>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
         <button class="script-btn" onclick="sendEmailByLoad('preview', this)" style="display:flex;align-items:center;justify-content:center;gap:6px">
           <span>👁️</span> Preview Email
@@ -415,6 +419,17 @@ async function runScript(scriptKey, btn) {
     logMsg('⚠️ Cannot reach script runner on port 9877.\nRun: python3 script_runner.py &');
     btn.disabled = false;
   }
+}
+
+function sendEmailByLoad(mode, btn) {
+  const loadCard = document.querySelector('[data-load-number]');
+  let loadNum = loadCard ? loadCard.getAttribute('data-load-number') : '';
+  if (!loadNum || loadNum === 'None' || loadNum === '') {
+    loadNum = prompt('Enter Load Number:');
+    if (!loadNum) return;
+  }
+  const endpoint = mode === 'preview' ? 'preview-email-load' : 'send-email-load';
+  runScriptWithRow(endpoint, loadNum.trim(), btn);
 }
 
 async function runScriptWithRow(scriptKey, row, btn) {
