@@ -103,7 +103,7 @@
 
 
   <!-- Current Load -->
-  <div class="card" style="border-left:4px solid #1F4E79">
+  <div class="card" style="border-left:4px solid #1F4E79" data-load-number="U6347138">
     <h2>🚛 Current Load</h2>
     
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px;margin-bottom:16px">
@@ -170,6 +170,14 @@
       <a href="https://theaitrucker.io/loadcalc.html" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;background:#f0f4f8;border:1.5px solid #1F4E79;color:#1F4E79;text-decoration:none;border-radius:8px;padding:12px 16px;font-weight:700;font-size:14px">
         <span style="font-size:18px">⚡</span> Evaluate a Load
       </a>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+        <button class="script-btn" onclick="sendEmailByLoad('preview', this)" style="display:flex;align-items:center;justify-content:center;gap:6px">
+          <span>👁️</span> Preview Email
+        </button>
+        <button class="script-btn" onclick="sendEmailByLoad('send', this)" style="display:flex;align-items:center;justify-content:center;gap:6px;background:#dcfce7;border-color:#16a34a;color:#15803d">
+          <span>📧</span> Send Email
+        </button>
+      </div>
     </div>
   </div>
 
