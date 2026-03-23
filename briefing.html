@@ -265,7 +265,7 @@ function timeAgo(dateStr) {
 async function loadRSSNews(containerId, rssUrl, sourceName, fallbackMsg, headlinesArr) {
   const container = document.getElementById(containerId);
   try {
-    const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=6`);
+    const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`);
     const data = await r.json();
     if (data.status !== 'ok' || !data.items?.length) throw new Error('no items');
     container.innerHTML = '';
