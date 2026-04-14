@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BMH Morning Briefing</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☀️</text></svg>">
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    /* === SHARED RESET & THEME === */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #090909;
+      color: #e5e7eb;
+      min-height: 100vh;
+    }
+
+    /* === NAV BAR (single source of truth) === */
+    .nav-bar { background: #0a0a0a; padding: 0 32px; display: flex; align-items: center; gap: 0; border-bottom: 1px solid rgba(255,255,255,.08); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .nav-bar::-webkit-scrollbar { display: none; }
+    .nav-logo { height: 32px; margin-right: 24px; flex-shrink: 0; }
+    .nav-link { padding: 14px 18px; font-size: 11px; font-weight: 500; text-decoration: none; color: rgba(255,255,255,.45); letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; transition: color .2s; position: relative; }
+    .nav-link:hover { color: rgba(255,255,255,.85); }
+    .nav-link.active { color: #ffffff; }
+    .nav-link.active::after { content: ''; position: absolute; bottom: 0; left: 18px; right: 18px; height: 2px; background: #ffffff; }
+
+    /* === PAGE-SPECIFIC STYLES === */
+    
+    :root{--bg:#090909;--surface:#1a1a1a;--surface2:#222222;--yellow:#FFD600;--green:#22c55e;--white:#ffffff;--mid:#9ca3af;--border:rgba(255,255,255,.08);--r:#ef4444}
+    .header{background:var(--surface);padding:20px 32px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;border-bottom:1px solid var(--border)}
+    .header h1{font-size:20px;font-weight:700;color:var(--white)}
+    .header .date{font-size:13px;color:var(--mid)}
+    .play-btn{background:var(--yellow);color:#000;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s}
+    .play-btn:hover{background:#ffe033}
+    .play-btn.playing{background:var(--r);color:white}
+    .content{padding:24px 32px;max-width:1400px;margin:0 auto}
+    .section-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--yellow);margin:24px 0 12px}
+    .weather-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:8px}
+    .hub-card{background:var(--surface);border-radius:12px;padding:16px;border:1px solid var(--border);transition:border-color .2s}
+    .hub-card:hover{border-color:rgba(255,214,0,.25)}
+    .hub-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+    .hub-name{font-size:13px;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:.5px}
+    .hub-city{font-size:16px;font-weight:700;color:var(--white);margin-top:2px}
+    .current-weather{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .weather-icon{font-size:36px}
+    .weather-temp{font-size:32px;font-weight:700;color:var(--white)}
+    .weather-desc{font-size:13px;color:var(--mid);text-transform:capitalize;margin-top:2px}
+    .weather-details{display:flex;gap:16px;font-size:12px;color:var(--mid);margin-bottom:12px}
+    .forecast-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+    .forecast-day{flex:0 0 auto;background:var(--surface2);border-radius:6px;padding:6px 8px;text-align:center;min-width:44px}
+    .forecast-day .fday{font-size:10px;color:var(--mid);font-weight:600}
+    .forecast-day .ficon{font-size:18px;margin:2px 0}
+    .forecast-day .fhi{font-size:12px;font-weight:700;color:var(--white)}
+    .forecast-day .flo{font-size:11px;color:var(--mid)}
+    .loading{color:var(--mid);font-size:13px;padding:20px 0}
+    .crypto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:8px}
+    .crypto-card{background:var(--surface);border-radius:12px;padding:16px;border:1px solid var(--border);transition:border-color .2s}
+    .crypto-card:hover{border-color:rgba(255,214,0,.25)}
+    .crypto-symbol{font-size:11px;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:1px}
+    .crypto-price{font-size:24px;font-weight:700;color:var(--white);margin:4px 0}
+    .crypto-change{font-size:13px;font-weight:600}
+    .crypto-change.up{color:var(--green)}
+    .crypto-change.down{color:var(--r)}
+    .news-list{display:flex;flex-direction:column;gap:8px}
+    .news-item{background:var(--surface);border-radius:8px;padding:12px 16px;border:1px solid var(--border);font-size:13px;color:var(--mid);line-height:1.5}
+    .news-item a{color:var(--yellow);text-decoration:none}
+    .news-item a:hover{text-decoration:underline}
+    .error{color:var(--r);font-size:12px;padding:8px 0}
+    .spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--yellow);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    #radar-map .leaflet-container{background:#090909}
+
+  </style>
+</head>
+<body>
+
+<!-- Nav Bar -->
+<nav class="nav-bar">
+  <img src="bmh-logo.jpg" alt="BMH Solutions" class="nav-logo">
+  <a href="dashboard.html" class="nav-link ">Dashboard</a>
+  <a href="planning.html" class="nav-link ">Planning</a>
+  <a href="briefing.html" class="nav-link active">Briefing</a>
+  <a href="operations.html" class="nav-link ">Operations</a>
+  <a href="https://bmhsolutions3711.github.io/bmh-available/" target="_blank" class="nav-link ">Available</a>
+  <a href="startup.html" class="nav-link ">Startup</a>
+  <a href="organization.html" class="nav-link ">Tasks</a>
+</nav>
+
+
+<div class="header">
+  <div>
+    <h1>☀️ BMH Morning Briefing</h1>
+    <div class="date">Tuesday, April 07, 2026</div>
+  </div>
+  <button class="play-btn" id="play-btn" onclick="toggleBriefing()">▶ Play Briefing</button>
+</div>
+
+
+
+<div class="content">
+
+  <div class="section-title">🛰 Live US Radar</div>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <button id="btn-past" onclick="setRadarMode('past')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #FFD600;background:#FFD600;color:#000;font-size:12px;font-weight:700;cursor:pointer">⏪ Past (2hr)</button>
+    <button id="btn-forecast" onclick="setRadarMode('forecast')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid rgba(255,255,255,.08);background:transparent;color:#9ca3af;font-size:12px;font-weight:700;cursor:pointer">⏩ Forecast (2hr)</button>
+  </div>
+  <div id="radar-map" style="width:100%;height:500px;border-radius:12px;overflow:hidden;margin-bottom:8px;border:1px solid rgba(255,255,255,.08)"></div>
+  <div id="radar-label" style="font-size:11px;color:#9ca3af;text-align:center;margin-bottom:16px">Showing: Last 2 hours of actual radar</div>
+
+  <div class="section-title">🌤 Regional Weather Hubs</div>
+  <div class="weather-grid" id="weather-grid">
+    <div class="loading"><span class="spinner"></span>Loading weather...</div>
+  </div>
+
+  <div class="section-title">💰 Crypto</div>
+  <div class="crypto-grid" id="crypto-grid">
+    <div class="loading"><span class="spinner"></span>Loading prices...</div>
+  </div>
+
+  <div class="section-title">📰 Crypto News</div>
+  <div class="news-list" id="news-list">
+    <div class="loading"><span class="spinner"></span>Loading news...</div>
+  </div>
+
+</div>
+
+
+
+<script>
+// === DATA BRIDGE: Jinja2 injects Python data as JS constants ===
+const OWM_KEY = '2100c08faa7729bbd1d620c0f8b7d104';
+const HUBS = [{"city": "North Canton", "lat": 40.8759, "lon": -81.4026, "name": "Home", "state": "OH"}, {"city": "Atlanta", "lat": 33.749, "lon": -84.388, "name": "Southeast", "state": "GA"}, {"city": "Dallas", "lat": 32.7767, "lon": -96.797, "name": "Texas", "state": "TX"}, {"city": "Phoenix", "lat": 33.4484, "lon": -112.074, "name": "Southwest", "state": "AZ"}, {"city": "Newark", "lat": 40.7357, "lon": -74.1724, "name": "East Coast", "state": "NJ"}, {"city": "St. Louis", "lat": 38.627, "lon": -90.1994, "name": "Plains", "state": "MO"}, {"city": "Denver", "lat": 39.7392, "lon": -104.9903, "name": "Mountain", "state": "CO"}, {"city": "Boise", "lat": 43.615, "lon": -116.2023, "name": "Northwest", "state": "ID"}];
+
+
+// === PURE JS: Everything below uses normal braces ===
+
+const WX_ICONS = {
+  'Clear': '☀️', 'Clouds': '☁️', 'Rain': '🌧️', 'Drizzle': '🌦️',
+  'Thunderstorm': '⛈️', 'Snow': '❄️', 'Mist': '🌫️', 'Fog': '🌫️',
+  'Haze': '🌫️', 'Smoke': '🌫️', 'Dust': '💨', 'Sand': '💨',
+  'Ash': '🌋', 'Squall': '💨', 'Tornado': '🌪️'
+};
+
+function wxIcon(main) { return WX_ICONS[main] || '🌡️'; }
+
+function fmtTemp(k) { return Math.round((k - 273.15) * 9/5 + 32) + '°'; }
+
+function dayAbbr(dt) {
+  return new Date(dt * 1000).toLocaleDateString('en-US', {weekday:'short'});
+}
+
+// ── Weather ──────────────────────────────────────────────────────────────────
+let weatherData = {};
+
+async function loadWeather() {
+  const grid = document.getElementById('weather-grid');
+  grid.innerHTML = '';
+
+  await Promise.all(HUBS.map(async hub => {
+    try {
+      const [cur, fore] = await Promise.all([
+        fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${hub.lat}&lon=${hub.lon}&appid=${OWM_KEY}`).then(r=>r.json()),
+        fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${hub.lat}&lon=${hub.lon}&appid=${OWM_KEY}`).then(r=>r.json())
+      ]);
+
+      const icon = wxIcon(cur.weather[0].main);
+      const temp = fmtTemp(cur.main.temp);
+      const feels = fmtTemp(cur.main.feels_like);
+      const desc = cur.weather[0].description;
+      const wind = Math.round(cur.wind.speed * 2.237) + ' mph';
+      const humid = cur.main.humidity + '%';
+
+      const dayMap = {};
+      const today  = dayAbbr(Math.floor(Date.now()/1000));
+      for (const item of fore.list) {
+        const d = dayAbbr(item.dt);
+        if (d === today) continue;
+        if (!dayMap[d]) dayMap[d] = { temps: [], icons: [] };
+        dayMap[d].temps.push(item.main.temp);
+        dayMap[d].icons.push(item.weather[0].main);
+      }
+      const days = Object.entries(dayMap).slice(0, 5).map(([d, v]) => {
+        const hi  = Math.max(...v.temps);
+        const lo  = Math.min(...v.temps);
+        const freq = {};
+        v.icons.forEach(i => freq[i] = (freq[i]||0) + 1);
+        const dominant = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0][0];
+        return { day: d, icon: wxIcon(dominant), hi: fmtTemp(hi), lo: fmtTemp(lo) };
+      });
+
+      weatherData[hub.name] = { temp, desc, wind, humid, icon, days };
+
+      const forecastHtml = days.map(d => `
+        <div class="forecast-day">
+          <div class="fday">${d.day}</div>
+          <div class="ficon">${d.icon}</div>
+          <div class="fhi">${d.hi}</div>
+          <div class="flo">${d.lo}</div>
+        </div>`).join('');
+
+      const wxUrl = `https://weather.com/weather/today/l/${hub.lat},${hub.lon}`;
+      const card = document.createElement('a');
+      card.className = 'hub-card';
+      card.id = 'hub-' + hub.name.replace(/ /g,'-');
+      card.href = wxUrl;
+      card.target = '_blank';
+      card.rel = 'noopener';
+      card.style.textDecoration = 'none';
+      card.style.color = 'inherit';
+      card.innerHTML = `
+        <div class="hub-header">
+          <div>
+            <div class="hub-name">${hub.name}</div>
+            <div class="hub-city">${hub.city}, ${hub.state}</div>
+          </div>
+        </div>
+        <div class="current-weather">
+          <div class="weather-icon">${icon}</div>
+          <div>
+            <div class="weather-temp">${temp}</div>
+            <div class="weather-desc">${desc}</div>
+          </div>
+        </div>
+        <div class="weather-details">
+          <span>💧 ${humid}</span>
+          <span>💨 ${wind}</span>
+          <span>Feels ${feels}</span>
+        </div>
+        <div class="forecast-row">${forecastHtml}</div>`;
+      grid.appendChild(card);
+
+    } catch(e) {
+      const card = document.createElement('div');
+      card.className = 'hub-card';
+      card.innerHTML = `<div class="hub-name">${hub.name}</div><div class="error">Failed to load weather</div>`;
+      grid.appendChild(card);
+    }
+  }));
+}
+
+// ── Crypto ───────────────────────────────────────────────────────────────────
+let cryptoData = {};
+
+async function loadCrypto() {
+  const grid = document.getElementById('crypto-grid');
+  try {
+    const coins = ['ripple','hedera-hashgraph','constellation-labs','ondo-finance','stellar','xdce-crowd-sale','bitcoin'];
+    const symbols = {'ripple':'XRP','hedera-hashgraph':'HBAR','constellation-labs':'DAG','ondo-finance':'ONDO','stellar':'XLM','xdce-crowd-sale':'XDC','bitcoin':'BTC'};
+    const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coins.join(',')}&vs_currencies=usd&include_24hr_change=true`);
+    const data = await r.json();
+    grid.innerHTML = '';
+    for (const coin of coins) {
+      const price = data[coin]?.usd ?? 0;
+      const change = data[coin]?.usd_24h_change ?? 0;
+      const sym = symbols[coin];
+      const up = change >= 0;
+      cryptoData[sym] = {price, change};
+      const card = document.createElement('div');
+      card.className = 'crypto-card';
+      card.innerHTML = `
+        <div class="crypto-symbol">${sym}</div>
+        <div class="crypto-price">$${price.toFixed(sym==='BTC'?0:4)}</div>
+        <div class="crypto-change ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(change).toFixed(2)}% (24h)</div>`;
+      grid.appendChild(card);
+    }
+  } catch(e) {
+    grid.innerHTML = '<div class="error">Failed to load crypto prices</div>';
+  }
+}
+
+// ── Crypto News ──────────────────────────────────────────────────────────────
+async function loadNews() {
+  const list = document.getElementById('news-list');
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/news?category=crypto&per_page=6');
+    const data = await r.json();
+    list.innerHTML = '';
+    const articles = data.data || data.news || [];
+    if (articles.length === 0) throw new Error('no articles');
+    for (const a of articles.slice(0,6)) {
+      const item = document.createElement('div');
+      item.className = 'news-item';
+      item.innerHTML = `<a href="${a.url}" target="_blank">${a.title}</a>`;
+      list.appendChild(item);
+    }
+  } catch(e) {
+    list.innerHTML = '<div class="news-item">News feed unavailable — check <a href="https://coindesk.com" target="_blank">CoinDesk</a> or <a href="https://cointelegraph.com" target="_blank">CoinTelegraph</a> for latest crypto news.</div>';
+  }
+}
+
+// ── Text-to-Speech ────────────────────────────────────────────────────────────
+let speaking = false;
+
+function buildScript() {
+  const d = new Date();
+  const dayName = d.toLocaleDateString('en-US',{weekday:'long'});
+  const dateStr = d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  let script = `Good morning Bryan. Today is ${dayName}, ${dateStr}. Here is your morning briefing. `;
+
+  script += 'Regional weather update. ';
+  for (const hub of HUBS) {
+    const wx = weatherData[hub.name];
+    if (wx) {
+      script += `${hub.name}, ${hub.city}. Currently ${wx.temp}, ${wx.desc}, winds at ${wx.wind}. `;
+      if (wx.days.length) {
+        script += `Forecast: ${wx.days.map(d=>`${d.day} ${d.hi} high ${d.lo} low`).join(', ')}. `;
+      }
+    }
+  }
+
+  script += 'Crypto update. ';
+  for (const [sym, d] of Object.entries(cryptoData)) {
+    const dir = d.change >= 0 ? 'up' : 'down';
+    script += `${sym} is at ${sym==='BTC'?'$'+Math.round(d.price):'$'+d.price.toFixed(4)}, ${dir} ${Math.abs(d.change).toFixed(2)} percent in the last 24 hours. `;
+  }
+
+  script += 'That concludes your morning briefing. Have a great day and stay safe out there.';
+  return script;
+}
+
+function toggleBriefing() {
+  const btn = document.getElementById('play-btn');
+  if (speaking) {
+    speechSynthesis.cancel();
+    speaking = false;
+    btn.textContent = '▶ Play Briefing';
+    btn.classList.remove('playing');
+  } else {
+    const script = buildScript();
+    const utt = new SpeechSynthesisUtterance(script);
+    utt.rate = 0.95;
+    utt.pitch = 1.0;
+    utt.onend = () => {
+      speaking = false;
+      btn.textContent = '▶ Play Briefing';
+      btn.classList.remove('playing');
+    };
+    speechSynthesis.speak(utt);
+    speaking = true;
+    btn.textContent = '⏹ Stop';
+    btn.classList.add('playing');
+  }
+}
+
+// ── Animated Radar (RainViewer) ───────────────────────────────────────────────
+let radarMap = null;
+let radarLayers = [];
+let radarTimer = null;
+let radarMode = 'past';
+let radarData = null;
+
+async function initRadar() {
+  radarMap = L.map('radar-map', {
+    center: [39.5, -98.35],
+    zoom: 4,
+    zoomControl: true,
+    attributionControl: true
+  });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap © CARTO',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(radarMap);
+
+  try {
+    radarData = await fetch('https://api.rainviewer.com/public/weather-maps.json').then(r => r.json());
+    setRadarMode('past');
+  } catch(e) {
+    console.warn('RainViewer load failed', e);
+  }
+}
+
+function setRadarMode(mode) {
+  radarMode = mode;
+
+  const btnPast = document.getElementById('btn-past');
+  const btnFore = document.getElementById('btn-forecast');
+  const label   = document.getElementById('radar-label');
+
+  if (mode === 'past') {
+    btnPast.style.background = '#FFD600'; btnPast.style.color = '#000'; btnPast.style.borderColor = '#FFD600';
+    btnFore.style.background = 'transparent'; btnFore.style.color = '#9ca3af'; btnFore.style.borderColor = 'rgba(255,255,255,.08)';
+    label.textContent = 'Showing: Last 2 hours of actual radar';
+  } else {
+    btnFore.style.background = '#FFD600'; btnFore.style.color = '#000'; btnFore.style.borderColor = '#FFD600';
+    btnPast.style.background = 'transparent'; btnPast.style.color = '#9ca3af'; btnPast.style.borderColor = 'rgba(255,255,255,.08)';
+    label.textContent = 'Showing: Next 2 hours forecast (RainViewer nowcast)';
+  }
+
+  clearInterval(radarTimer);
+  radarLayers.forEach(l => radarMap.removeLayer(l));
+  radarLayers = [];
+
+  if (!radarData) return;
+
+  let frames = [];
+  if (mode === 'past') {
+    frames = radarData.radar.past || [];
+  } else {
+    frames = (radarData.radar.nowcast && radarData.radar.nowcast.length)
+      ? radarData.radar.nowcast
+      : (radarData.satellite && radarData.satellite.infrared ? radarData.satellite.infrared.slice(-6) : []);
+  }
+
+  if (!frames.length) {
+    document.getElementById('radar-label').textContent = 'Forecast not available right now — check back shortly';
+    return;
+  }
+
+  let currentIdx = 0;
+
+  frames.forEach(frame => {
+    const layer = L.tileLayer(
+      `https://tilecache.rainviewer.com${frame.path}/256/{z}/{x}/{y}/2/1_1.png`,
+      { opacity: 0, attribution: 'RainViewer' }
+    );
+    layer.addTo(radarMap);
+    radarLayers.push(layer);
+  });
+
+  function showFrame(idx) {
+    radarLayers.forEach((l, i) => l.setOpacity(i === idx ? 0.7 : 0));
+    currentIdx = idx;
+  }
+
+  function animate() {
+    showFrame(currentIdx);
+    currentIdx = (currentIdx + 1) % radarLayers.length;
+  }
+
+  showFrame(mode === 'past' ? frames.length - 1 : 0);
+  radarTimer = setInterval(animate, 500);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadWeather();
+loadCrypto();
+loadNews();
+initRadar();
+
+</script>
+
+
+</body>
+</html>

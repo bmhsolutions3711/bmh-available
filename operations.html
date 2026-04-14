@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BMH Operations</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+  
+  <style>
+    /* === SHARED RESET & THEME === */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #090909;
+      color: #e5e7eb;
+      min-height: 100vh;
+    }
+
+    /* === NAV BAR (single source of truth) === */
+    .nav-bar { background: #0a0a0a; padding: 0 32px; display: flex; align-items: center; gap: 0; border-bottom: 1px solid rgba(255,255,255,.08); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .nav-bar::-webkit-scrollbar { display: none; }
+    .nav-logo { height: 32px; margin-right: 24px; flex-shrink: 0; }
+    .nav-link { padding: 14px 18px; font-size: 11px; font-weight: 500; text-decoration: none; color: rgba(255,255,255,.45); letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; transition: color .2s; position: relative; }
+    .nav-link:hover { color: rgba(255,255,255,.85); }
+    .nav-link.active { color: #ffffff; }
+    .nav-link.active::after { content: ''; position: absolute; bottom: 0; left: 18px; right: 18px; height: 2px; background: #ffffff; }
+
+    /* === PAGE-SPECIFIC STYLES === */
+    
+    .ops-header { background: #1a1a1a; padding: 16px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .ops-header h1 { font-size: 20px; font-weight: 700; color: #ffffff; }
+    .ops-header .sub { font-size: 13px; color: rgba(255,255,255,.4); margin-top: 2px; }
+    .content { padding: 24px 32px; max-width: 1100px; margin: 0 auto; }
+    .card { background: #1a1a1a; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,.06); }
+    .card h2 { font-size: 16px; font-weight: 700; color: rgba(255,255,255,.85); margin-bottom: 6px; }
+    .card .desc { font-size: 13px; color: rgba(255,255,255,.4); margin-bottom: 20px; }
+    .script-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+    .script-btn { padding: 12px 16px; border-radius: 8px; border: 1.5px solid #e5b524; background: transparent;
+                  color: #e5b524; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; text-align: left; }
+    .script-btn:hover { background: rgba(229,181,36,.1); }
+    .script-btn.running { background: rgba(234,179,8,.15); border-color: #ca8a04; color: #fbbf24; }
+    .script-btn.success { background: rgba(34,197,94,.15); border-color: #22c55e; color: #22c55e; }
+    .script-btn.error   { background: rgba(220,38,38,.15); border-color: #dc2626; color: #ef4444; }
+    .row-action { display: flex; gap: 8px; align-items: center; }
+    .row-action input { width: 90px; border: 1.5px solid rgba(255,255,255,.15); border-radius: 6px; padding: 10px 12px;
+                        font-size: 13px; color: #e5e7eb; background: rgba(255,255,255,.05); }
+    .script-log { margin-top: 20px; background: #0a0a0a; color: #a3e635; border-radius: 10px; padding: 16px;
+                  font-family: 'Courier New', monospace; font-size: 12px; max-height: 300px; overflow-y: auto;
+                  white-space: pre-wrap; display: none; border: 1px solid rgba(255,255,255,.06); }
+    .script-log.visible { display: block; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .status-dot.online { background: #22c55e; }
+    .status-dot.offline { background: #dc2626; }
+    .runner-status { font-size: 13px; color: rgba(255,255,255,.4); display: flex; align-items: center; }
+    .divider { height: 1px; background: rgba(255,255,255,.06); margin: 16px 0; }
+
+  </style>
+</head>
+<body>
+
+<!-- Nav Bar -->
+<nav class="nav-bar">
+  <img src="bmh-logo.jpg" alt="BMH Solutions" class="nav-logo">
+  <a href="dashboard.html" class="nav-link ">Dashboard</a>
+  <a href="planning.html" class="nav-link ">Planning</a>
+  <a href="briefing.html" class="nav-link ">Briefing</a>
+  <a href="operations.html" class="nav-link active">Operations</a>
+  <a href="https://bmhsolutions3711.github.io/bmh-available/" target="_blank" class="nav-link ">Available</a>
+  <a href="startup.html" class="nav-link ">Startup</a>
+  <a href="organization.html" class="nav-link ">Tasks</a>
+</nav>
+
+
+<div class="ops-header">
+  <div>
+    <h1>⚙️ BMH Operations</h1>
+    <div class="sub">Script runner &amp; automation controls</div>
+  </div>
+  <div class="runner-status">
+    <span class="status-dot" id="statusDot"></span>
+    <span id="statusText">Checking runner...</span>
+  </div>
+</div>
+
+
+
+<div class="content">
+
+  <!-- KPIs -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px">
+    <div style="background:#1a1a1a;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,.06);border-left:4px solid #e5b524">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,.4);margin-bottom:8px">Loads This Year</div>
+      <div style="font-size:28px;font-weight:700;color:#e5b524;line-height:1" id="kpi-loads">—</div>
+      <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.3);margin-top:6px">processed</div>
+    </div>
+    
+    <div style="background:#1a1a1a;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,.06);border-left:4px dashed rgba(255,255,255,.15)">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:#d1d5db;margin-bottom:8px">Coming Soon</div>
+      <div style="font-size:28px;font-weight:700;color:#e5e7eb;line-height:1">—</div>
+      <div style="font-size:13px;font-weight:600;color:#e5e7eb;margin-top:6px">placeholder</div>
+    </div>
+    
+    <div style="background:#1a1a1a;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,.06);border-left:4px dashed rgba(255,255,255,.15)">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:#d1d5db;margin-bottom:8px">Coming Soon</div>
+      <div style="font-size:28px;font-weight:700;color:#e5e7eb;line-height:1">—</div>
+      <div style="font-size:13px;font-weight:600;color:#e5e7eb;margin-top:6px">placeholder</div>
+    </div>
+    
+    <div style="background:#1a1a1a;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,.06);border-left:4px dashed rgba(255,255,255,.15)">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:#d1d5db;margin-bottom:8px">Coming Soon</div>
+      <div style="font-size:28px;font-weight:700;color:#e5e7eb;line-height:1">—</div>
+      <div style="font-size:13px;font-weight:600;color:#e5e7eb;margin-top:6px">placeholder</div>
+    </div>
+    
+    <div style="background:#1a1a1a;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,.06);border-left:4px dashed rgba(255,255,255,.15)">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:#d1d5db;margin-bottom:8px">Coming Soon</div>
+      <div style="font-size:28px;font-weight:700;color:#e5e7eb;line-height:1">—</div>
+      <div style="font-size:13px;font-weight:600;color:#e5e7eb;margin-top:6px">placeholder</div>
+    </div>
+    
+  </div>
+
+  <!-- Quick Links -->
+  <div class="card">
+    <h2>🔗 Quick Links</h2>
+    <div class="desc">BIK Mission Control and shortcuts.</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">
+      <a href="#" target="_blank" class="script-btn" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;text-decoration:none;background:rgba(229,181,36,.15);border-color:#e5b524;color:#e5b524;font-weight:700;text-align:center">🧠 BIK Control</a><!-- URL removed — private network endpoint -->
+      <a href="#" class="script-btn" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;text-decoration:none;opacity:.4;text-align:center">📌 Slot 2</a>
+      <a href="#" class="script-btn" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;text-decoration:none;opacity:.4;text-align:center">📌 Slot 3</a>
+      <a href="#" class="script-btn" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;text-decoration:none;opacity:.4;text-align:center">📌 Slot 4</a>
+      <a href="#" class="script-btn" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;text-decoration:none;opacity:.4;text-align:center">📌 Slot 5</a>
+      <a href="#" class="script-btn" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;text-decoration:none;opacity:.4;text-align:center">📌 Slot 6</a>
+      <a href="#" class="script-btn" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;text-decoration:none;opacity:.4;text-align:center">📌 Slot 7</a>
+      <a href="#" class="script-btn" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;text-decoration:none;opacity:.4;text-align:center">📌 Slot 8</a>
+      <a href="#" class="script-btn" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;text-decoration:none;opacity:.4;text-align:center">📌 Slot 9</a>
+      <a href="#" class="script-btn" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;text-decoration:none;opacity:.4;text-align:center">📌 Slot 10</a>
+      <a href="#" class="script-btn" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;text-decoration:none;opacity:.4;text-align:center">📌 Slot 11</a>
+      <a href="#" class="script-btn" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;text-decoration:none;opacity:.4;text-align:center">📌 Slot 12</a>
+    </div>
+  </div>
+
+  <!-- Evaluate a Load -->
+  <div style="margin-bottom:16px">
+    <a href="https://theaitrucker.io/loadcalc.html" target="_blank" class="script-btn" style="display:flex;align-items:center;justify-content:center;gap:6px;background:rgba(255,214,0,.15);border-color:#FFD600;color:#FFD600;padding:14px;font-weight:700;text-decoration:none;font-size:15px">
+      <span>⚡</span> Evaluate a Load
+    </a>
+  </div>
+
+  <!-- Current Load -->
+  <div class="card" style="background:#f8fafc;border:2px solid #e5b524;border-left:4px solid #e5b524" data-load-number="981809">
+    <h2 style="color:#1a1a1a;font-size:18px">🚛 Current Load</h2>
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px;margin-bottom:16px">
+      <a href="https://drive.google.com/drive/search?q=981809" target="_blank" style="display:block;background:#eef2f7;border-radius:8px;padding:12px 14px;text-decoration:none;transition:background .15s">
+        <div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Load # 📄</div>
+        <div style="font-size:16px;font-weight:700;color:#b8860b">981809</div>
+      </a>
+      <div style="background:#eef2f7;border-radius:8px;padding:12px 14px">
+        <div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Broker</div>
+        <div style="font-size:16px;font-weight:700;color:#1a1a1a">Freight Tec</div>
+      </div>
+      <div style="background:#eef2f7;border-radius:8px;padding:12px 14px">
+        <div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Rate</div>
+        <div style="font-size:16px;font-weight:700;color:#1a1a1a">$900.00</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <a href="https://maps.google.com/?q=2421+15th+St+SW+Mason+City+IA" target="_blank" style="display:block;background:#FFD600;color:#000;text-decoration:none;border-radius:10px;padding:14px 16px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.7;margin-bottom:6px">📍 Pickup — 04/08/2026</div>
+        <div style="font-size:15px;font-weight:700">Mason City, IA</div>
+        <div style="font-size:11px;opacity:.8;margin-top:2px">2421 15th St SW</div>
+        <div style="font-size:11px;margin-top:8px;opacity:.7">Tap to open in Google Maps →</div>
+      </a>
+      <a href="https://maps.google.com/?q=785+Lakeshore+Blvd+Painesville+OH" target="_blank" style="display:block;background:#0f4c2a;color:white;text-decoration:none;border-radius:10px;padding:14px 16px">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.7;margin-bottom:6px">🏁 Delivery — </div>
+        <div style="font-size:15px;font-weight:700">Painesville, OH</div>
+        <div style="font-size:11px;opacity:.8;margin-top:2px">785 Lakeshore Blvd</div>
+        <div style="font-size:11px;margin-top:8px;opacity:.7">Tap to open in Google Maps →</div>
+      </a>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+      <a href="tel:(651) 587-1024" style="display:flex;align-items:center;gap:10px;background:#eef2f7;border:1.5px solid #d1d5db;color:#1a1a1a;text-decoration:none;border-radius:8px;padding:12px 16px;font-weight:700;font-size:14px">
+        <span style="font-size:20px">📞</span>
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin-bottom:2px">Call Broker</div>
+          <div>(651) 587-1024</div>
+        </div>
+      </a>
+      <a href="mailto:dispatch@example.com" style="display:flex;align-items:center;gap:10px;background:#eef2f7;border:1.5px solid #d1d5db;color:#1a1a1a;text-decoration:none;border-radius:8px;padding:12px 16px;font-weight:700;font-size:14px">
+        <span style="font-size:20px">✉️</span>
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin-bottom:2px">Email Broker</div>
+          <div style="font-size:13px">dispatch@example.com</div>
+        </div>
+      </a>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">
+      <a href="tel:" style="display:flex;align-items:center;gap:10px;background:#eef2f7;border:1.5px solid #d1d5db;color:#1a1a1a;text-decoration:none;border-radius:8px;padding:12px 16px;font-weight:700;font-size:14px">
+        <span style="font-size:20px">📞</span>
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin-bottom:2px">📍 Pickup Contact</div>
+          <div style="font-size:13px"> No phone on file</div>
+        </div>
+      </a>
+      <a href="tel:" style="display:flex;align-items:center;gap:10px;background:#eef2f7;border:1.5px solid #d1d5db;color:#1a1a1a;text-decoration:none;border-radius:8px;padding:12px 16px;font-weight:700;font-size:14px">
+        <span style="font-size:20px">📞</span>
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;margin-bottom:2px">🏁 Delivery Contact</div>
+          <div style="font-size:13px"> No phone on file</div>
+        </div>
+      </a>
+    </div>
+    
+  </div>
+
+  <!-- Availability Updater -->
+  <div class="card">
+    <h2>📍 Update Availability</h2>
+    <div class="desc">Update your available location card without running the rate agent. Add length and weight if looking for partials.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#e5b524;text-transform:uppercase;letter-spacing:.05em">City</label>
+        <input type="text" id="avail-city" placeholder="e.g. Dallas" style="width:100%;border:1.5px solid rgba(255,255,255,.15);border-radius:6px;padding:9px 11px;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.05);margin-top:5px">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#e5b524;text-transform:uppercase;letter-spacing:.05em">State</label>
+        <input type="text" id="avail-state" placeholder="e.g. TX" maxlength="2" style="width:100%;border:1.5px solid rgba(255,255,255,.15);border-radius:6px;padding:9px 11px;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.05);margin-top:5px">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#e5b524;text-transform:uppercase;letter-spacing:.05em">Available Date</label>
+        <input type="date" id="avail-date" style="width:100%;border:1.5px solid rgba(255,255,255,.15);border-radius:6px;padding:9px 11px;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.05);margin-top:5px">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#e5b524;text-transform:uppercase;letter-spacing:.05em">Available Length (ft)</label>
+        <input type="text" id="avail-length" placeholder="e.g. 40" style="width:100%;border:1.5px solid rgba(255,255,255,.15);border-radius:6px;padding:9px 11px;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.05);margin-top:5px">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#e5b524;text-transform:uppercase;letter-spacing:.05em">Weight Capacity (lbs)</label>
+        <input type="text" id="avail-weight" placeholder="e.g. 16500" style="width:100%;border:1.5px solid rgba(255,255,255,.15);border-radius:6px;padding:9px 11px;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.05);margin-top:5px">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#e5b524;text-transform:uppercase;letter-spacing:.05em">Zip (optional)</label>
+        <input type="text" id="avail-zip" placeholder="e.g. 75201" style="width:100%;border:1.5px solid rgba(255,255,255,.15);border-radius:6px;padding:9px 11px;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.05);margin-top:5px">
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <button class="script-btn" onclick="updateAvailability(this)">📍 Update Availability Card</button>
+    </div>
+  </div>
+
+  <!-- Output Log -->
+  <div class="card">
+    <h2>📟 Output Log</h2>
+    <div class="desc">Script output appears here.</div>
+    <div class="script-log visible" id="script-log">Ready. Click a button above to run a script.</div>
+  </div>
+
+  <!-- Draft Email -->
+  <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:16px">
+    <button class="script-btn" onclick="draftEmailByLoad(this)" style="display:flex;align-items:center;justify-content:center;gap:6px;background:rgba(255,214,0,.15);border-color:#FFD600;color:#FFD600;padding:14px;font-weight:700">
+      <span>📝</span> Draft Email
+    </button>
+    <a href="https://mail.google.com/mail/#drafts" target="_blank" class="script-btn" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:14px;text-decoration:none;font-size:13px">
+      <span>📂</span> Drafts
+    </a>
+  </div>
+
+  <!-- Load Emails -->
+  <div class="card">
+    <h2>📝 Load Emails</h2>
+    <div class="desc">Create Gmail drafts with invoice, BOL, POD, and signed rate sheet attached. Review in Gmail before sending.</div>
+    <div class="script-grid">
+      <button class="script-btn" onclick="runScript('draft-email', this)" style="background:rgba(255,214,0,.15);border-color:#FFD600;color:#FFD600">📝 Draft Email (last row)</button>
+    </div>
+    <div class="divider"></div>
+    <div class="row-action">
+      <input type="number" id="email-row" placeholder="Row #" min="2">
+      <button class="script-btn" onclick="runScriptWithRow('draft-email-row', document.getElementById('email-row').value, this)" style="background:rgba(255,214,0,.15);border-color:#FFD600;color:#FFD600">📝 Draft for Row</button>
+    </div>
+  </div>
+
+  <!-- Invoices -->
+  <div class="card">
+    <h2>🧾 Invoices</h2>
+    <div class="desc">Generate PDF invoices from load data.</div>
+    <div class="script-grid">
+      <button class="script-btn" onclick="runScript('generate-invoice', this)">🧾 Generate Invoice (last row)</button>
+    </div>
+    <div class="divider"></div>
+    <div class="row-action">
+      <input type="number" id="invoice-row" placeholder="Row #" min="2">
+      <button class="script-btn" onclick="runScriptWithRow('generate-invoice-row', document.getElementById('invoice-row').value, this)">🧾 Invoice for Specific Row</button>
+    </div>
+  </div>
+
+  <!-- Maintenance Updater -->
+  <div class="card">
+    <h2>🚚 F250 — Update Maintenance</h2>
+    <div class="desc">Update odometer and last service records. Changes save directly to maintenance.json.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:4px">
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#e5b524;text-transform:uppercase;letter-spacing:.05em">Current Odometer (mi)</label>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <input type="number" id="m-odometer" placeholder="e.g. 65000" style="flex:1;border:1.5px solid rgba(255,255,255,.15);border-radius:6px;padding:10px 12px;font-size:14px;color:#ffffff;background:rgba(255,255,255,.05)">
+          <button class="script-btn" style="white-space:nowrap" onclick="saveMaintenance()">💾 Save All</button>
+          <button class="script-btn" style="white-space:nowrap" onclick="runScript('sync-dashboard', this)">🔄 Sync Dashboard</button>
+        </div>
+      </div>
+      <div></div>
+      <div style="background:#2a2a2a;border-radius:8px;padding:14px;border:1px solid rgba(255,255,255,.1)">
+        <div style="font-size:13px;font-weight:700;color:#e5b524;margin-bottom:10px">🛢️ Oil Change</div>
+        <label style="font-size:11px;color:#e5e7eb;font-weight:600">Last Service (mi)</label>
+        <input type="number" id="m-oil-last" placeholder="e.g. 60000" style="width:100%;border:1.5px solid rgba(255,255,255,.15);border-radius:6px;padding:8px 10px;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.05);margin-top:4px;margin-bottom:8px">
+        <label style="font-size:11px;color:#e5e7eb;font-weight:600">Interval (mi)</label>
+        <input type="number" id="m-oil-interval" placeholder="e.g. 5000" style="width:100%;border:1.5px solid rgba(255,255,255,.15);border-radius:6px;padding:8px 10px;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.05);margin-top:4px">
+      </div>
+      <div style="background:#2a2a2a;border-radius:8px;padding:14px;border:1px solid rgba(255,255,255,.1)">
+        <div style="font-size:13px;font-weight:700;color:#e5b524;margin-bottom:10px">🔄 Tire Rotation</div>
+        <label style="font-size:11px;color:#e5e7eb;font-weight:600">Last Service (mi)</label>
+        <input type="number" id="m-tire-last" placeholder="e.g. 55000" style="width:100%;border:1.5px solid rgba(255,255,255,.15);border-radius:6px;padding:8px 10px;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.05);margin-top:4px;margin-bottom:8px">
+        <label style="font-size:11px;color:#e5e7eb;font-weight:600">Interval (mi)</label>
+        <input type="number" id="m-tire-interval" placeholder="e.g. 7500" style="width:100%;border:1.5px solid rgba(255,255,255,.15);border-radius:6px;padding:8px 10px;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.05);margin-top:4px">
+      </div>
+      <div style="background:#2a2a2a;border-radius:8px;padding:14px;border:1px solid rgba(255,255,255,.1)">
+        <div style="font-size:13px;font-weight:700;color:#e5b524;margin-bottom:10px">💨 Air Filter</div>
+        <label style="font-size:11px;color:#e5e7eb;font-weight:600">Last Service (mi)</label>
+        <input type="number" id="m-air-last" placeholder="e.g. 50000" style="width:100%;border:1.5px solid rgba(255,255,255,.15);border-radius:6px;padding:8px 10px;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.05);margin-top:4px;margin-bottom:8px">
+        <label style="font-size:11px;color:#e5e7eb;font-weight:600">Interval (mi)</label>
+        <input type="number" id="m-air-interval" placeholder="e.g. 15000" style="width:100%;border:1.5px solid rgba(255,255,255,.15);border-radius:6px;padding:8px 10px;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.05);margin-top:4px">
+      </div>
+    </div>
+    <div id="m-status" style="margin-top:14px;font-size:13px;color:#16a34a;font-weight:600;display:none"></div>
+  </div>
+
+  <!-- Broker Blacklist -->
+  <div class="card">
+    <h2>🚫 Broker Blacklist</h2>
+    <div class="desc">Brokers you won't work with. Editable — click a row to edit, or add new below.</div>
+    <div id="brokerList" style="margin-top:12px"></div>
+    <div class="divider"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:1;min-width:140px">
+        <label style="font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Broker Name</label>
+        <input type="text" id="bl-name" placeholder="Company name" style="width:100%;border:1.5px solid rgba(255,255,255,.15);border-radius:6px;padding:8px 10px;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.05);margin-top:4px">
+      </div>
+      <div style="flex:2;min-width:200px">
+        <label style="font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Reason</label>
+        <input type="text" id="bl-reason" placeholder="Why to avoid" style="width:100%;border:1.5px solid rgba(255,255,255,.15);border-radius:6px;padding:8px 10px;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.05);margin-top:4px">
+      </div>
+      <div style="min-width:80px">
+        <label style="font-size:10px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Tags</label>
+        <input type="text" id="bl-tags" placeholder="slow-pay" style="width:100%;border:1.5px solid rgba(255,255,255,.15);border-radius:6px;padding:8px 10px;font-size:13px;color:#e5e7eb;background:rgba(255,255,255,.05);margin-top:4px">
+      </div>
+      <button class="script-btn" onclick="addBroker()" style="background:rgba(220,38,38,.15);border-color:#dc2626;color:#dc2626;white-space:nowrap">🚫 Add to Blacklist</button>
+    </div>
+  </div>
+
+  <!-- Dashboard & Sync -->
+  <div class="card">
+    <h2>📊 Dashboard</h2>
+    <div class="desc">Regenerate and publish the dashboard to GitHub Pages.</div>
+    <div class="script-grid">
+      <button class="script-btn" onclick="runScript('sync-dashboard', this)">🔄 Sync Dashboard</button>
+    </div>
+  </div>
+
+  <!-- Legal Documents -->
+  <div class="card">
+    <h2>📋 Legal Documents</h2>
+    <div class="desc">Privacy Policy and Terms & Conditions for Twilio SMS compliance.</div>
+    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+      <a href="https://bmhsolutions3711.github.io/bmh-available/privacy.html" target="_blank" class="script-btn" style="text-decoration:none;text-align:center">🔒 Privacy Policy</a>
+      <a href="https://bmhsolutions3711.github.io/bmh-available/terms.html" target="_blank" class="script-btn" style="text-decoration:none;text-align:center">📄 Terms & Conditions</a>
+    </div>
+  </div>
+
+</div>
+
+
+
+<script>
+const RUNNER_URL = '';  // URL removed for security — configure via env var
+const RUNNER_TOKEN = '';  // Token removed for security — use env var
+const RUNNER_HEADERS = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + RUNNER_TOKEN };
+
+
+
+// ── Broker Blacklist ──
+const BIK_API = '';  // Local-only endpoint removed — not accessible from public repo
+async function loadBrokers() {
+  try {
+    const r = await fetch(BIK_API + '/api/brokers');
+    const brokers = await r.json();
+    const el = document.getElementById('brokerList');
+    if (!brokers.length) { el.innerHTML = '<div style="color:#6b7280;font-size:13px;padding:8px">No brokers blacklisted yet.</div>'; return; }
+    el.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:13px">' +
+      '<tr style="border-bottom:1px solid rgba(255,255,255,.1)"><th style="text-align:left;padding:8px;color:#9ca3af;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Broker</th><th style="text-align:left;padding:8px;color:#9ca3af;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Reason</th><th style="text-align:left;padding:8px;color:#9ca3af;font-size:10px;text-transform:uppercase;letter-spacing:.5px">Tags</th><th style="width:30px"></th></tr>' +
+      brokers.map(b =>
+        '<tr style="border-bottom:1px solid rgba(255,255,255,.05)" data-id="' + b.id + '">' +
+        '<td style="padding:8px;color:#e5e7eb;font-weight:600">' + esc(b.name) + '</td>' +
+        '<td style="padding:8px;color:#d1d5db">' + esc(b.reason) + '</td>' +
+        '<td style="padding:8px"><span style="background:rgba(220,38,38,.15);color:#dc2626;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">' + esc(b.tags || '') + '</span></td>' +
+        '<td style="padding:8px;text-align:center"><button onclick="removeBroker(\'' + b.id + '\')" style="background:none;border:none;color:#6b7280;cursor:pointer;font-size:14px" title="Remove">✕</button></td>' +
+        '</tr>'
+      ).join('') + '</table>';
+  } catch(e) { document.getElementById('brokerList').innerHTML = '<div style="color:#dc2626;font-size:12px">Could not load blacklist — is Mission Control running?</div>'; }
+}
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+async function addBroker() {
+  const name = document.getElementById('bl-name').value.trim();
+  const reason = document.getElementById('bl-reason').value.trim();
+  const tags = document.getElementById('bl-tags').value.trim();
+  if (!name) return;
+  await fetch(BIK_API + '/api/brokers', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({name, reason, tags})
+  });
+  document.getElementById('bl-name').value = '';
+  document.getElementById('bl-reason').value = '';
+  document.getElementById('bl-tags').value = '';
+  loadBrokers();
+}
+async function removeBroker(id) {
+  if (!confirm('Remove this broker from blacklist?')) return;
+  await fetch(BIK_API + '/api/brokers/' + id, {method:'DELETE'});
+  loadBrokers();
+}
+loadBrokers();
+
+document.getElementById('statusDot').className = 'status-dot online';
+document.getElementById('statusText').textContent = 'Script runner online';
+
+if (new URLSearchParams(window.location.search).get('sync') === '1') {
+  setTimeout(() => {
+    document.querySelectorAll('.script-btn').forEach(b => {
+      if (b.textContent.includes('Sync Dashboard')) {
+        logMsg('Auto-triggered sync from Dashboard button...');
+        runScript('sync-dashboard', b);
+      }
+    });
+  }, 800);
+}
+
+function logMsg(msg) {
+  const log = document.getElementById('script-log');
+  log.classList.add('visible');
+  log.textContent += msg + '\n';
+  log.scrollTop = log.scrollHeight;
+}
+
+function clearLog() {
+  document.getElementById('script-log').textContent = '';
+}
+
+function setBtnState(btn, state, label) {
+  btn.className = 'script-btn ' + state;
+  btn.textContent = label;
+  btn.disabled = (state === 'running');
+}
+
+async function pollJob(jobId, btn, originalLabel) {
+  while (true) {
+    await new Promise(r => setTimeout(r, 1000));
+    try {
+      const res  = await fetch(RUNNER_URL + '/job/' + jobId);
+      if (!res.ok) { logMsg('Poll error: ' + res.status); continue; }
+      const data = await res.json();
+      if (data.status === 'running' || data.status === 'queued') continue;
+      if (data.status === 'done') {
+        setBtnState(btn, 'success', '✅ ' + originalLabel);
+        if (data.output) logMsg(data.output);
+        // Show clickable Gmail draft link (works on phone)
+        if (data.output) {
+          const gmailMatch = data.output.match(/https:\/\/mail\.google\.com\/mail\/#drafts\?compose=\S+/);
+          if (gmailMatch) {
+            const logEl = document.getElementById('log');
+            const link = document.createElement('a');
+            link.href = gmailMatch[0];
+            link.target = '_blank';
+            link.textContent = '📧 Open Draft in Gmail';
+            link.style.cssText = 'display:block;text-align:center;background:#34a853;color:white;padding:14px;border-radius:8px;font-weight:700;font-size:16px;text-decoration:none;margin-top:12px';
+            logEl.appendChild(link);
+          }
+        }
+        logMsg('\n✅ Done!');
+      } else {
+        setBtnState(btn, 'error', '❌ ' + originalLabel);
+        if (data.error)  logMsg('ERROR: ' + data.error);
+        if (data.output) logMsg(data.output);
+      }
+      setTimeout(() => setBtnState(btn, '', originalLabel), 4000);
+      btn.disabled = false;
+      break;
+    } catch(e) {
+      setBtnState(btn, 'error', '❌ ' + originalLabel);
+      logMsg('Lost connection to script runner.');
+      btn.disabled = false;
+      break;
+    }
+  }
+}
+
+async function runScript(scriptKey, btn) {
+  const originalLabel = btn.textContent;
+  clearLog();
+  setBtnState(btn, 'running', '⏳ Running...');
+  logMsg('▶ Starting: ' + originalLabel + '\n');
+  try {
+    const res  = await fetch(RUNNER_URL + '/run/' + scriptKey, { headers: RUNNER_HEADERS });
+    if (!res.ok) { setBtnState(btn, 'error', '❌ ' + originalLabel); logMsg('Server error: ' + res.status); btn.disabled=false; return; }
+    const data = await res.json();
+    if (data.error) { setBtnState(btn, 'error', '❌ ' + originalLabel); logMsg('Error: ' + data.error); btn.disabled=false; return; }
+    logMsg('Job ID: ' + data.job_id + '\nWaiting for output...\n');
+    pollJob(data.job_id, btn, originalLabel);
+  } catch(e) {
+    setBtnState(btn, 'error', '❌ ' + originalLabel);
+    logMsg('⚠️ Cannot reach script runner on port 9877.\nRun: python3 script_runner.py &');
+    btn.disabled = false;
+  }
+}
+
+function draftEmailByLoad(btn) {
+  const loadCard = document.querySelector('[data-load-number]');
+  let loadNum = loadCard ? loadCard.getAttribute('data-load-number') : '';
+  if (!loadNum || loadNum === 'None' || loadNum === '') {
+    loadNum = prompt('Enter Load Number:');
+    if (!loadNum) return;
+  }
+  runScriptWithRow('draft-email-load', loadNum.trim(), btn);
+}
+
+async function runScriptWithRow(scriptKey, row, btn) {
+  if (!row) { alert('Please enter a row number'); return; }
+  const originalLabel = btn.textContent;
+  clearLog();
+  setBtnState(btn, 'running', '⏳ Running...');
+  logMsg('▶ Starting: ' + originalLabel + ' (row ' + row + ')\n');
+  try {
+    const res  = await fetch(RUNNER_URL + '/run/' + scriptKey + '?row=' + row, { headers: RUNNER_HEADERS });
+    if (!res.ok) { setBtnState(btn, 'error', '❌ ' + originalLabel); logMsg('Server error: ' + res.status); btn.disabled=false; return; }
+    const data = await res.json();
+    if (data.error) { setBtnState(btn, 'error', '❌ ' + originalLabel); logMsg('Error: ' + data.error); btn.disabled=false; return; }
+    logMsg('Job ID: ' + data.job_id + '\nWaiting for output...\n');
+    pollJob(data.job_id, btn, originalLabel);
+  } catch(e) {
+    setBtnState(btn, 'error', '❌ ' + originalLabel);
+    logMsg('⚠️ Cannot reach script runner on port 9877.\nRun: python3 script_runner.py &');
+    btn.disabled = false;
+  }
+}
+
+// ── Maintenance ────────────────────────────────────────────────
+async function loadMaintenance() {
+  try {
+    const res  = await fetch(RUNNER_URL + '/maintenance');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.error) return;
+    if (data.current_odometer) document.getElementById('m-odometer').value = data.current_odometer;
+    if (data.oil_change) {
+      document.getElementById('m-oil-last').value     = data.oil_change.last_service_odometer || '';
+      document.getElementById('m-oil-interval').value = data.oil_change.interval_miles || '';
+    }
+    if (data.tire_rotation) {
+      document.getElementById('m-tire-last').value     = data.tire_rotation.last_service_odometer || '';
+      document.getElementById('m-tire-interval').value = data.tire_rotation.interval_miles || '';
+    }
+    if (data.air_filter) {
+      document.getElementById('m-air-last').value     = data.air_filter.last_service_odometer || '';
+      document.getElementById('m-air-interval').value = data.air_filter.interval_miles || '';
+    }
+  } catch(e) { /* runner offline */ }
+}
+
+async function saveMaintenance() {
+  const payload = {
+    current_odometer: document.getElementById('m-odometer').value,
+    oil_change: {
+      last_service_odometer: document.getElementById('m-oil-last').value,
+      interval_miles:        document.getElementById('m-oil-interval').value
+    },
+    tire_rotation: {
+      last_service_odometer: document.getElementById('m-tire-last').value,
+      interval_miles:        document.getElementById('m-tire-interval').value
+    },
+    air_filter: {
+      last_service_odometer: document.getElementById('m-air-last').value,
+      interval_miles:        document.getElementById('m-air-interval').value
+    }
+  };
+  try {
+    const res  = await fetch(RUNNER_URL + '/maintenance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    const st   = document.getElementById('m-status');
+    if (data.ok) {
+      st.textContent = '✅ Saved successfully!';
+      st.style.color = '#16a34a';
+    } else {
+      st.textContent = '❌ Error: ' + (data.error || 'Unknown');
+      st.style.color = '#dc2626';
+    }
+    st.style.display = 'block';
+    setTimeout(() => st.style.display = 'none', 3000);
+  } catch(e) {
+    const st = document.getElementById('m-status');
+    st.textContent = '❌ Cannot reach script runner';
+    st.style.color = '#dc2626';
+    st.style.display = 'block';
+    setTimeout(() => st.style.display = 'none', 3000);
+  }
+}
+
+loadMaintenance();
+
+async function loadAvailability() {
+  try {
+    const res  = await fetch(RUNNER_URL + '/availability');
+    const data = await res.json();
+    if (data.city)   document.getElementById('avail-city').value   = data.city;
+    if (data.state)  document.getElementById('avail-state').value  = data.state;
+    if (data.zip)    document.getElementById('avail-zip').value    = data.zip;
+    if (data.length) document.getElementById('avail-length').value = data.length;
+    if (data.weight) document.getElementById('avail-weight').value = data.weight;
+    if (data.date) {
+      const parts = data.date.split('/');
+      if (parts.length === 3) {
+        document.getElementById('avail-date').value = parts[2] + '-' + parts[0] + '-' + parts[1];
+      }
+    }
+  } catch(e) { /* runner offline */ }
+}
+loadAvailability();
+
+async function loadKPIs() {
+  try {
+    const res  = await fetch(RUNNER_URL + '/kpis', { signal: AbortSignal.timeout(3000) });
+    const data = await res.json();
+    if (data.loads_ytd !== undefined) {
+      document.getElementById('kpi-loads').textContent = data.loads_ytd;
+    }
+  } catch(e) { /* runner offline */ }
+}
+loadKPIs();
+
+async function updateAvailability(btn) {
+  const city   = document.getElementById('avail-city').value.trim();
+  const state  = document.getElementById('avail-state').value.trim();
+  const zip    = document.getElementById('avail-zip').value.trim();
+  const rawDate = document.getElementById('avail-date').value.trim();
+  const date = rawDate ? new Date(rawDate + 'T12:00:00').toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}) : new Date().toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'});
+  const length = document.getElementById('avail-length').value.trim();
+  const weight = document.getElementById('avail-weight').value.trim();
+
+  if (!city || !state) { logMsg('⚠️ City and State are required.'); return; }
+
+  const originalLabel = btn.textContent;
+  clearLog();
+  setBtnState(btn, 'running', '⏳ Updating...');
+  logMsg('▶ Updating availability card...\n');
+
+  const url = RUNNER_URL + '/run/update-availability'
+    + '?city=' + encodeURIComponent(city)
+    + '&state=' + encodeURIComponent(state)
+    + '&zip=' + encodeURIComponent(zip)
+    + '&date=' + encodeURIComponent(date || new Date().toLocaleDateString('en-US'))
+    + '&length=' + encodeURIComponent(length)
+    + '&weight=' + encodeURIComponent(weight);
+
+  try {
+    const res  = await fetch(url, { headers: RUNNER_HEADERS });
+    const data = await res.json();
+    if (data.error) { setBtnState(btn, 'error', '❌ ' + originalLabel); logMsg('Error: ' + data.error); btn.disabled=false; return; }
+    logMsg('Job ID: ' + data.job_id + '\nWaiting...\n');
+    pollJob(data.job_id, btn, originalLabel);
+  } catch(e) {
+    setBtnState(btn, 'error', '❌ ' + originalLabel);
+    logMsg('⚠️ Cannot reach script runner on port 9877.');
+    btn.disabled = false;
+  }
+}
+
+</script>
+
+
+</body>
+</html>

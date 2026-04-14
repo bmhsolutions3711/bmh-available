@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BMH Solutions — Planning</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>">
+  
+  <style>
+    /* === SHARED RESET & THEME === */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #090909;
+      color: #e5e7eb;
+      min-height: 100vh;
+    }
+
+    /* === NAV BAR (single source of truth) === */
+    .nav-bar { background: #0a0a0a; padding: 0 32px; display: flex; align-items: center; gap: 0; border-bottom: 1px solid rgba(255,255,255,.08); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .nav-bar::-webkit-scrollbar { display: none; }
+    .nav-logo { height: 32px; margin-right: 24px; flex-shrink: 0; }
+    .nav-link { padding: 14px 18px; font-size: 11px; font-weight: 500; text-decoration: none; color: rgba(255,255,255,.45); letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; transition: color .2s; position: relative; }
+    .nav-link:hover { color: rgba(255,255,255,.85); }
+    .nav-link.active { color: #ffffff; }
+    .nav-link.active::after { content: ''; position: absolute; bottom: 0; left: 18px; right: 18px; height: 2px; background: #ffffff; }
+
+    /* === PAGE-SPECIFIC STYLES === */
+    
+    /* ── Dark-theme tokens ── */
+    :root {
+      --bg:#090909; --surface:#1a1a1a; --surface2:#222222;
+      --border:#1f1f1f; --border2:#2a2a2a;
+      --yellow:#FFD600; --green:#00E676; --red:#FF4444;
+      --white:#F5F5F7; --mid:#86868b; --dim:#3d3d3f;
+      --r:10px;
+    }
+
+    .header {
+      background: var(--surface);
+      color: white;
+      padding: 20px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .header h1 { font-size: 20px; font-weight: 700; }
+    .header p  { font-size: 12px; color: rgba(255,255,255,.5); margin-top: 2px; }
+    .updated { font-size: 11px; color: rgba(255,255,255,.4); text-align: right; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 24px 32px; }
+    .card {
+      background: var(--surface) !important;
+      border-radius: var(--r);
+      padding: 20px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+    }
+    .card h2 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--white);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 16px;
+    }
+
+    /* Routine Widget */
+    .routine-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media(max-width:700px) { .routine-grid { grid-template-columns: 1fr; } }
+    .routine-date-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .routine-date-nav button { background: none; border: 1px solid var(--border2); border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 13px; color: var(--white); }
+    .routine-date-nav button:hover { background: var(--surface2); }
+    #routine-date-display { font-size: 15px; font-weight: 700; color: var(--yellow); flex: 1; text-align: center; }
+    .checklist { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .checklist li { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--white); }
+    .checklist li input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--yellow); }
+    .score-bar { margin-top: 16px; background: var(--surface2); border-radius: 99px; height: 8px; overflow: hidden; }
+    .score-fill { height: 8px; border-radius: 99px; background: var(--yellow); transition: width .3s; }
+    .score-label { font-size: 12px; color: var(--mid); margin-top: 6px; }
+    .workout-btn { margin-top: 16px; width: 100%; padding: 10px; border-radius: 8px; border: 2px solid var(--green); background: var(--surface); color: var(--green); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; }
+    .workout-btn.active { background: var(--green); color: #000; }
+    .above-btn { margin-top: 10px; width: 100%; padding: 10px; border-radius: 8px; border: 2px solid #7c3aed; background: var(--surface); color: #7c3aed; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; }
+    .above-btn.active { background: #7c3aed; color: white; }
+
+    /* Calendar */
+    .cal-wrap { overflow: visible; margin-top: 8px; }
+    table.cal { border-collapse: separate; border-spacing: 1px 2px; width: 100%; table-layout: fixed; }
+    .month-label { font-size: 9px; font-weight: 700; color: var(--mid); padding: 1px 5px 1px 0; white-space: nowrap; vertical-align: middle; width: 24px; }
+    .wh { font-size: 7px; font-weight: 500; color: var(--mid); text-align: center; padding: 1px 0; }
+    .cal-empty { height: calc((100vh - 200px) / 12); background: #374151; border-radius: 2px; opacity: 0.6; }
+    .cal-cell { height: calc((100vh - 200px) / 12); text-align: left; font-size: 7px; font-weight: 600; border-radius: 2px; cursor: pointer; vertical-align: top; transition: opacity .1s; position: relative; line-height: 1; padding: 2px 2px 0 2px; }
+    .cal-cell:hover { opacity: .8; }
+    .legend { display: flex; gap: 14px; margin-top: 14px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--mid); }
+    .legend-dot { width: 13px; height: 13px; border-radius: 3px; flex-shrink: 0; }
+    .footer { text-align: center; font-size: 11px; color: rgba(255,255,255,.3); padding: 24px; border-top: 1px solid var(--border); margin-top: 8px; }
+
+    /* ── Roadmap ── */
+    .roadmap-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 0; }
+    @media(max-width:800px) { .roadmap-grid { grid-template-columns: 1fr; } }
+    .roadmap-col { background: var(--surface2); border-radius: var(--r); padding: 12px; min-height: 200px; border: 1px solid var(--border); }
+    .roadmap-col-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .roadmap-col-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--white); }
+    .roadmap-col-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; color: #000; }
+    .badge-short { background: var(--yellow); } .badge-medium { background: #7c3aed; color: white; } .badge-long { background: var(--green); color: #000; }
+    .roadmap-add { width: 100%; padding: 8px; background: rgba(255,255,255,.03); border: 1.5px dashed var(--border2); border-radius: 8px; color: var(--mid); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; margin-bottom: 8px; }
+    .roadmap-add:hover { border-color: var(--yellow); color: var(--yellow); }
+    .roadmap-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 11px 12px; margin-bottom: 7px; cursor: pointer; transition: all .15s; position: relative; border-left: 3px solid transparent; }
+    .roadmap-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); transform: translateY(-1px); }
+    .roadmap-card.dragging { opacity: .4; transform: scale(.97); }
+    .roadmap-card.drag-over { border-top: 2px solid var(--yellow); }
+    .roadmap-card.priority-high { border-left-color: #ef4444; }
+    .roadmap-card.priority-med { border-left-color: var(--yellow); }
+    .roadmap-card.priority-low { border-left-color: var(--green); }
+    .rc-title { font-size: 13px; font-weight: 700; color: var(--white); margin-bottom: 4px; padding-right: 18px; }
+    .rc-essence { font-size: 11px; color: var(--mid); line-height: 1.4; margin-bottom: 6px; }
+    .rc-meta { display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--dim); }
+    .rc-tasks-done { color: var(--green); font-weight: 700; }
+    .rc-delete { position: absolute; top: 8px; right: 8px; background: none; border: none; color: var(--dim); cursor: pointer; font-size: 13px; opacity: 0; transition: opacity .15s; }
+    .roadmap-card:hover .rc-delete { opacity: 1; }
+
+    /* Modal */
+    .rm-modal-overlay { display: none; position: fixed; inset: 0; z-index: 500; background: rgba(0,0,0,.45); align-items: center; justify-content: center; padding: 20px; }
+    .rm-modal-overlay.show { display: flex; }
+    .rm-modal { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; box-shadow: 0 24px 64px rgba(0,0,0,.5); }
+    .rm-modal-header { padding: 18px 20px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .rm-modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--mid); }
+    .rm-modal-body { padding: 18px 20px; }
+    .rm-field { margin-bottom: 14px; }
+    .rm-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--mid); margin-bottom: 5px; }
+    .rm-inp { width: 100%; padding: 9px 12px; border: 1.5px solid var(--border2); border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; transition: border-color .15s; background: var(--surface2); color: var(--white); }
+    .rm-inp:focus { border-color: var(--yellow); }
+    .rm-textarea { width: 100%; padding: 9px 12px; border: 1.5px solid var(--border2); border-radius: 8px; font-size: 13px; font-family: inherit; resize: vertical; min-height: 80px; outline: none; transition: border-color .15s; background: var(--surface2); color: var(--white); }
+    .rm-textarea:focus { border-color: var(--yellow); }
+    .rm-task-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+    .rm-task-cb { width: 15px; height: 15px; accent-color: var(--yellow); flex-shrink: 0; }
+    .rm-task-text { flex: 1; font-size: 13px; color: var(--white); }
+    .rm-task-text.done { text-decoration: line-through; color: var(--mid); }
+    .rm-task-del { background: none; border: none; color: var(--dim); cursor: pointer; font-size: 12px; }
+    .rm-add-task { display: flex; gap: 8px; margin-top: 8px; }
+    .rm-save-btn { width: 100%; padding: 11px; background: var(--yellow); color: #000; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 16px; transition: background .15s; }
+    .rm-save-btn:hover { background: #e6c200; }
+    .rm-file-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; font-size: 12px; }
+    .rm-file-link { color: var(--yellow); text-decoration: none; flex: 1; font-weight: 500; }
+    .rm-file-link:hover { text-decoration: underline; }
+    .rm-select { width: 100%; padding: 9px 12px; border: 1.5px solid var(--border2); border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; background: var(--surface2); color: var(--white); }
+    .mantra-bar { background: linear-gradient(135deg, rgba(255,214,0,.15), rgba(255,214,0,.05)); border: 1px solid rgba(255,214,0,.2); border-radius: var(--r); padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+    .mantra-input { flex: 1; background: transparent; border: none; outline: none; color: var(--yellow); font-size: 18px; font-weight: 600; font-style: italic; font-family: inherit; letter-spacing: .3px; }
+    .mantra-input::placeholder { color: rgba(255,214,0,.35); }
+    .mantra-icon { font-size: 22px; flex-shrink: 0; }
+
+  </style>
+</head>
+<body>
+
+<!-- Nav Bar -->
+<nav class="nav-bar">
+  <img src="bmh-logo.jpg" alt="BMH Solutions" class="nav-logo">
+  <a href="dashboard.html" class="nav-link ">Dashboard</a>
+  <a href="planning.html" class="nav-link active">Planning</a>
+  <a href="briefing.html" class="nav-link ">Briefing</a>
+  <a href="operations.html" class="nav-link ">Operations</a>
+  <a href="https://bmhsolutions3711.github.io/bmh-available/" target="_blank" class="nav-link ">Available</a>
+  <a href="startup.html" class="nav-link ">Startup</a>
+  <a href="organization.html" class="nav-link ">Tasks</a>
+</nav>
+
+
+<div class="header">
+  <div>
+    <h1>BMH Solutions LLC — Planning</h1>
+    <p>MC: 1700226 &nbsp;&middot;&nbsp; DOT: 04349026 &nbsp;&middot;&nbsp; Hotshot Trucking</p>
+  </div>
+  <div class="updated">Last updated<br>April 07, 2026</div>
+</div>
+
+
+
+<div class="container">
+
+  <!-- Mantra -->
+  <div class="mantra-bar">
+    <span class="mantra-icon">&#128172;</span>
+    <input class="mantra-input" id="mantraInput" placeholder="Type your motivational mantra here..." maxlength="200">
+  </div>
+
+  <!-- Morning Routine Widget -->
+  <div class="card">
+    <h2>&#127775; Morning Routine &amp; Workout</h2>
+    <div class="routine-grid">
+      <div>
+        <div class="routine-date-nav">
+          <button onclick="shiftDay(-1)">&#8592;</button>
+          <span id="routine-date-display"></span>
+          <button onclick="shiftDay(1)">&#8594;</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);margin-bottom:8px">&#127749; Morning Routine</div>
+            <ul class="checklist">
+              <li><input type="checkbox" id="chk-0" onchange="saveRoutine()"> <label for="chk-0">&#127470;&#127477; Serenity Prayer</label></li>
+              <li><input type="checkbox" id="chk-1" onchange="saveRoutine()"> <label for="chk-1">&#128138; Meds</label></li>
+              <li><input type="checkbox" id="chk-2" onchange="saveRoutine()"> <label for="chk-2">&#129457; Brush Teeth</label></li>
+            </ul>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);margin-bottom:8px">&#9728;&#65039; Daily Routine</div>
+            <ul class="checklist">
+              <li><input type="checkbox" id="chk-3" onchange="saveRoutine()"> <label for="chk-3">&#128703; Take a Shower</label></li>
+              <li><input type="checkbox" id="chk-4" onchange="saveRoutine()"> <label for="chk-4">&#129496; 5 Min Quiet Time</label></li>
+              <li><input type="checkbox" id="chk-5" onchange="saveRoutine()"> <label for="chk-5">&#128221; 5 Min Journal</label></li>
+              <li><input type="checkbox" id="chk-6" onchange="saveRoutine()"> <label for="chk-6">&#128218; Read 1 Page</label></li>
+            </ul>
+          </div>
+        </div>
+        <div class="score-bar" style="margin-top:10px"><div class="score-fill" id="score-fill" style="width:0%"></div></div>
+        <div class="score-label" id="score-label">0 / 7 completed</div>
+      </div>
+      <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;gap:16px">
+        <div style="font-size:48px">&#127947;</div>
+        <div style="font-size:14px;color:var(--mid);text-align:center">Did you work out today?</div>
+        <button class="workout-btn" id="workout-btn" onclick="toggleWorkout()">&#10005; No Workout</button>
+        <div style="font-size:11px;color:var(--mid);text-align:center">Tap to toggle for the selected date</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar -->
+  <div class="card">
+    <h2>&#128197; 2026 Year at a Glance</h2>
+    <div class="cal-wrap">
+      <table class="cal">
+        <thead><tr><th style="width:32px"></th><th class='wh' style=''>M</th><th class='wh' style=''>Tu</th><th class='wh' style=''>W</th><th class='wh' style=''>Th</th><th class='wh' style=''>F</th><th class='wh' style='color:#c9a227;font-weight:600;'>Sa</th><th class='wh' style='color:#c9a227;font-weight:600;'>Su</th><th class='wh' style=''>M</th><th class='wh' style=''>Tu</th><th class='wh' style=''>W</th><th class='wh' style=''>Th</th><th class='wh' style=''>F</th><th class='wh' style='color:#c9a227;font-weight:600;'>Sa</th><th class='wh' style='color:#c9a227;font-weight:600;'>Su</th><th class='wh' style=''>M</th><th class='wh' style=''>Tu</th><th class='wh' style=''>W</th><th class='wh' style=''>Th</th><th class='wh' style=''>F</th><th class='wh' style='color:#c9a227;font-weight:600;'>Sa</th><th class='wh' style='color:#c9a227;font-weight:600;'>Su</th><th class='wh' style=''>M</th><th class='wh' style=''>Tu</th><th class='wh' style=''>W</th><th class='wh' style=''>Th</th><th class='wh' style=''>F</th><th class='wh' style='color:#c9a227;font-weight:600;'>Sa</th><th class='wh' style='color:#c9a227;font-weight:600;'>Su</th><th class='wh' style=''>M</th><th class='wh' style=''>Tu</th><th class='wh' style=''>W</th><th class='wh' style=''>Th</th><th class='wh' style=''>F</th><th class='wh' style='color:#c9a227;font-weight:600;'>Sa</th><th class='wh' style='color:#c9a227;font-weight:600;'>Su</th><th class='wh' style=''>M</th><th class='wh' style=''>Tu</th></tr></thead>
+        <tbody><tr><td class='month-label'>Jan</td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-cell' id='day-2026-01-01' data-date='2026-01-01'>&nbsp;</td><td class='cal-cell' id='day-2026-01-02' data-date='2026-01-02'>&nbsp;</td><td class='cal-cell' id='day-2026-01-03' data-date='2026-01-03'>&nbsp;</td><td class='cal-cell' id='day-2026-01-04' data-date='2026-01-04'>&nbsp;</td><td class='cal-cell' id='day-2026-01-05' data-date='2026-01-05'>&nbsp;</td><td class='cal-cell' id='day-2026-01-06' data-date='2026-01-06'>&nbsp;</td><td class='cal-cell' id='day-2026-01-07' data-date='2026-01-07'>&nbsp;</td><td class='cal-cell' id='day-2026-01-08' data-date='2026-01-08'>&nbsp;</td><td class='cal-cell' id='day-2026-01-09' data-date='2026-01-09'>&nbsp;</td><td class='cal-cell' id='day-2026-01-10' data-date='2026-01-10'>&nbsp;</td><td class='cal-cell' id='day-2026-01-11' data-date='2026-01-11'>&nbsp;</td><td class='cal-cell' id='day-2026-01-12' data-date='2026-01-12'>&nbsp;</td><td class='cal-cell' id='day-2026-01-13' data-date='2026-01-13'>&nbsp;</td><td class='cal-cell' id='day-2026-01-14' data-date='2026-01-14'>&nbsp;</td><td class='cal-cell' id='day-2026-01-15' data-date='2026-01-15'>&nbsp;</td><td class='cal-cell' id='day-2026-01-16' data-date='2026-01-16'>&nbsp;</td><td class='cal-cell' id='day-2026-01-17' data-date='2026-01-17'>&nbsp;</td><td class='cal-cell' id='day-2026-01-18' data-date='2026-01-18'>&nbsp;</td><td class='cal-cell' id='day-2026-01-19' data-date='2026-01-19'>&nbsp;</td><td class='cal-cell' id='day-2026-01-20' data-date='2026-01-20'>&nbsp;</td><td class='cal-cell' id='day-2026-01-21' data-date='2026-01-21'>&nbsp;</td><td class='cal-cell' id='day-2026-01-22' data-date='2026-01-22'>&nbsp;</td><td class='cal-cell' id='day-2026-01-23' data-date='2026-01-23'>&nbsp;</td><td class='cal-cell' id='day-2026-01-24' data-date='2026-01-24'>&nbsp;</td><td class='cal-cell' id='day-2026-01-25' data-date='2026-01-25'>&nbsp;</td><td class='cal-cell' id='day-2026-01-26' data-date='2026-01-26'>&nbsp;</td><td class='cal-cell' id='day-2026-01-27' data-date='2026-01-27'>&nbsp;</td><td class='cal-cell' id='day-2026-01-28' data-date='2026-01-28'>&nbsp;</td><td class='cal-cell' id='day-2026-01-29' data-date='2026-01-29'>&nbsp;</td><td class='cal-cell' id='day-2026-01-30' data-date='2026-01-30'>&nbsp;</td><td class='cal-cell' id='day-2026-01-31' data-date='2026-01-31'>&nbsp;</td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td></tr><tr><td class='month-label'>Feb</td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-cell' id='day-2026-02-01' data-date='2026-02-01'>&nbsp;</td><td class='cal-cell' id='day-2026-02-02' data-date='2026-02-02'>&nbsp;</td><td class='cal-cell' id='day-2026-02-03' data-date='2026-02-03'>&nbsp;</td><td class='cal-cell' id='day-2026-02-04' data-date='2026-02-04'>&nbsp;</td><td class='cal-cell' id='day-2026-02-05' data-date='2026-02-05'>&nbsp;</td><td class='cal-cell' id='day-2026-02-06' data-date='2026-02-06'>&nbsp;</td><td class='cal-cell' id='day-2026-02-07' data-date='2026-02-07'>&nbsp;</td><td class='cal-cell' id='day-2026-02-08' data-date='2026-02-08'>&nbsp;</td><td class='cal-cell' id='day-2026-02-09' data-date='2026-02-09'>&nbsp;</td><td class='cal-cell' id='day-2026-02-10' data-date='2026-02-10'>&nbsp;</td><td class='cal-cell' id='day-2026-02-11' data-date='2026-02-11'>&nbsp;</td><td class='cal-cell' id='day-2026-02-12' data-date='2026-02-12'>&nbsp;</td><td class='cal-cell' id='day-2026-02-13' data-date='2026-02-13'>&nbsp;</td><td class='cal-cell' id='day-2026-02-14' data-date='2026-02-14'>&nbsp;</td><td class='cal-cell' id='day-2026-02-15' data-date='2026-02-15'>&nbsp;</td><td class='cal-cell' id='day-2026-02-16' data-date='2026-02-16'>&nbsp;</td><td class='cal-cell' id='day-2026-02-17' data-date='2026-02-17'>&nbsp;</td><td class='cal-cell' id='day-2026-02-18' data-date='2026-02-18'>&nbsp;</td><td class='cal-cell' id='day-2026-02-19' data-date='2026-02-19'>&nbsp;</td><td class='cal-cell' id='day-2026-02-20' data-date='2026-02-20'>&nbsp;</td><td class='cal-cell' id='day-2026-02-21' data-date='2026-02-21'>&nbsp;</td><td class='cal-cell' id='day-2026-02-22' data-date='2026-02-22'>&nbsp;</td><td class='cal-cell' id='day-2026-02-23' data-date='2026-02-23'>&nbsp;</td><td class='cal-cell' id='day-2026-02-24' data-date='2026-02-24'>&nbsp;</td><td class='cal-cell' id='day-2026-02-25' data-date='2026-02-25'>&nbsp;</td><td class='cal-cell' id='day-2026-02-26' data-date='2026-02-26'>&nbsp;</td><td class='cal-cell' id='day-2026-02-27' data-date='2026-02-27'>&nbsp;</td><td class='cal-cell' id='day-2026-02-28' data-date='2026-02-28'>&nbsp;</td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td></tr><tr><td class='month-label'>Mar</td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-cell' id='day-2026-03-01' data-date='2026-03-01'>&nbsp;</td><td class='cal-cell' id='day-2026-03-02' data-date='2026-03-02'>&nbsp;</td><td class='cal-cell' id='day-2026-03-03' data-date='2026-03-03'>&nbsp;</td><td class='cal-cell' id='day-2026-03-04' data-date='2026-03-04'>&nbsp;</td><td class='cal-cell' id='day-2026-03-05' data-date='2026-03-05'>&nbsp;</td><td class='cal-cell' id='day-2026-03-06' data-date='2026-03-06'>&nbsp;</td><td class='cal-cell' id='day-2026-03-07' data-date='2026-03-07'>&nbsp;</td><td class='cal-cell' id='day-2026-03-08' data-date='2026-03-08'>&nbsp;</td><td class='cal-cell' id='day-2026-03-09' data-date='2026-03-09'>&nbsp;</td><td class='cal-cell' id='day-2026-03-10' data-date='2026-03-10'>&nbsp;</td><td class='cal-cell' id='day-2026-03-11' data-date='2026-03-11'>&nbsp;</td><td class='cal-cell' id='day-2026-03-12' data-date='2026-03-12'>&nbsp;</td><td class='cal-cell' id='day-2026-03-13' data-date='2026-03-13'>&nbsp;</td><td class='cal-cell' id='day-2026-03-14' data-date='2026-03-14'>&nbsp;</td><td class='cal-cell' id='day-2026-03-15' data-date='2026-03-15'>&nbsp;</td><td class='cal-cell' id='day-2026-03-16' data-date='2026-03-16'>&nbsp;</td><td class='cal-cell' id='day-2026-03-17' data-date='2026-03-17'>&nbsp;</td><td class='cal-cell' id='day-2026-03-18' data-date='2026-03-18'>&nbsp;</td><td class='cal-cell' id='day-2026-03-19' data-date='2026-03-19'>&nbsp;</td><td class='cal-cell' id='day-2026-03-20' data-date='2026-03-20'>&nbsp;</td><td class='cal-cell' id='day-2026-03-21' data-date='2026-03-21'>&nbsp;</td><td class='cal-cell' id='day-2026-03-22' data-date='2026-03-22'>&nbsp;</td><td class='cal-cell' id='day-2026-03-23' data-date='2026-03-23'>&nbsp;</td><td class='cal-cell' id='day-2026-03-24' data-date='2026-03-24'>&nbsp;</td><td class='cal-cell' id='day-2026-03-25' data-date='2026-03-25'>&nbsp;</td><td class='cal-cell' id='day-2026-03-26' data-date='2026-03-26'>&nbsp;</td><td class='cal-cell' id='day-2026-03-27' data-date='2026-03-27'>&nbsp;</td><td class='cal-cell' id='day-2026-03-28' data-date='2026-03-28'>&nbsp;</td><td class='cal-cell' id='day-2026-03-29' data-date='2026-03-29'>&nbsp;</td><td class='cal-cell' id='day-2026-03-30' data-date='2026-03-30'>&nbsp;</td><td class='cal-cell' id='day-2026-03-31' data-date='2026-03-31'>&nbsp;</td></tr><tr><td class='month-label'>Apr</td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-cell' id='day-2026-04-01' data-date='2026-04-01'>&nbsp;</td><td class='cal-cell' id='day-2026-04-02' data-date='2026-04-02'>&nbsp;</td><td class='cal-cell' id='day-2026-04-03' data-date='2026-04-03'>&nbsp;</td><td class='cal-cell' id='day-2026-04-04' data-date='2026-04-04'>&nbsp;</td><td class='cal-cell' id='day-2026-04-05' data-date='2026-04-05'>&nbsp;</td><td class='cal-cell' id='day-2026-04-06' data-date='2026-04-06'>&nbsp;</td><td class='cal-cell' id='day-2026-04-07' data-date='2026-04-07'>&nbsp;</td><td class='cal-cell' id='day-2026-04-08' data-date='2026-04-08'>&nbsp;</td><td class='cal-cell' id='day-2026-04-09' data-date='2026-04-09'>&nbsp;</td><td class='cal-cell' id='day-2026-04-10' data-date='2026-04-10'>&nbsp;</td><td class='cal-cell' id='day-2026-04-11' data-date='2026-04-11'>&nbsp;</td><td class='cal-cell' id='day-2026-04-12' data-date='2026-04-12'>&nbsp;</td><td class='cal-cell' id='day-2026-04-13' data-date='2026-04-13'>&nbsp;</td><td class='cal-cell' id='day-2026-04-14' data-date='2026-04-14'>&nbsp;</td><td class='cal-cell' id='day-2026-04-15' data-date='2026-04-15'>&nbsp;</td><td class='cal-cell' id='day-2026-04-16' data-date='2026-04-16'>&nbsp;</td><td class='cal-cell' id='day-2026-04-17' data-date='2026-04-17'>&nbsp;</td><td class='cal-cell' id='day-2026-04-18' data-date='2026-04-18'>&nbsp;</td><td class='cal-cell' id='day-2026-04-19' data-date='2026-04-19'>&nbsp;</td><td class='cal-cell' id='day-2026-04-20' data-date='2026-04-20'>&nbsp;</td><td class='cal-cell' id='day-2026-04-21' data-date='2026-04-21'>&nbsp;</td><td class='cal-cell' id='day-2026-04-22' data-date='2026-04-22'>&nbsp;</td><td class='cal-cell' id='day-2026-04-23' data-date='2026-04-23'>&nbsp;</td><td class='cal-cell' id='day-2026-04-24' data-date='2026-04-24'>&nbsp;</td><td class='cal-cell' id='day-2026-04-25' data-date='2026-04-25'>&nbsp;</td><td class='cal-cell' id='day-2026-04-26' data-date='2026-04-26'>&nbsp;</td><td class='cal-cell' id='day-2026-04-27' data-date='2026-04-27'>&nbsp;</td><td class='cal-cell' id='day-2026-04-28' data-date='2026-04-28'>&nbsp;</td><td class='cal-cell' id='day-2026-04-29' data-date='2026-04-29'>&nbsp;</td><td class='cal-cell' id='day-2026-04-30' data-date='2026-04-30'>&nbsp;</td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td></tr><tr><td class='month-label'>May</td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-cell' id='day-2026-05-01' data-date='2026-05-01'>&nbsp;</td><td class='cal-cell' id='day-2026-05-02' data-date='2026-05-02'>&nbsp;</td><td class='cal-cell' id='day-2026-05-03' data-date='2026-05-03'>&nbsp;</td><td class='cal-cell' id='day-2026-05-04' data-date='2026-05-04'>&nbsp;</td><td class='cal-cell' id='day-2026-05-05' data-date='2026-05-05'>&nbsp;</td><td class='cal-cell' id='day-2026-05-06' data-date='2026-05-06'>&nbsp;</td><td class='cal-cell' id='day-2026-05-07' data-date='2026-05-07'>&nbsp;</td><td class='cal-cell' id='day-2026-05-08' data-date='2026-05-08'>&nbsp;</td><td class='cal-cell' id='day-2026-05-09' data-date='2026-05-09'>&nbsp;</td><td class='cal-cell' id='day-2026-05-10' data-date='2026-05-10'>&nbsp;</td><td class='cal-cell' id='day-2026-05-11' data-date='2026-05-11'>&nbsp;</td><td class='cal-cell' id='day-2026-05-12' data-date='2026-05-12'>&nbsp;</td><td class='cal-cell' id='day-2026-05-13' data-date='2026-05-13'>&nbsp;</td><td class='cal-cell' id='day-2026-05-14' data-date='2026-05-14'>&nbsp;</td><td class='cal-cell' id='day-2026-05-15' data-date='2026-05-15'>&nbsp;</td><td class='cal-cell' id='day-2026-05-16' data-date='2026-05-16'>&nbsp;</td><td class='cal-cell' id='day-2026-05-17' data-date='2026-05-17'>&nbsp;</td><td class='cal-cell' id='day-2026-05-18' data-date='2026-05-18'>&nbsp;</td><td class='cal-cell' id='day-2026-05-19' data-date='2026-05-19'>&nbsp;</td><td class='cal-cell' id='day-2026-05-20' data-date='2026-05-20'>&nbsp;</td><td class='cal-cell' id='day-2026-05-21' data-date='2026-05-21'>&nbsp;</td><td class='cal-cell' id='day-2026-05-22' data-date='2026-05-22'>&nbsp;</td><td class='cal-cell' id='day-2026-05-23' data-date='2026-05-23'>&nbsp;</td><td class='cal-cell' id='day-2026-05-24' data-date='2026-05-24'>&nbsp;</td><td class='cal-cell' id='day-2026-05-25' data-date='2026-05-25'>&nbsp;</td><td class='cal-cell' id='day-2026-05-26' data-date='2026-05-26'>&nbsp;</td><td class='cal-cell' id='day-2026-05-27' data-date='2026-05-27'>&nbsp;</td><td class='cal-cell' id='day-2026-05-28' data-date='2026-05-28'>&nbsp;</td><td class='cal-cell' id='day-2026-05-29' data-date='2026-05-29'>&nbsp;</td><td class='cal-cell' id='day-2026-05-30' data-date='2026-05-30'>&nbsp;</td><td class='cal-cell' id='day-2026-05-31' data-date='2026-05-31'>&nbsp;</td><td class='cal-empty'></td><td class='cal-empty'></td></tr><tr><td class='month-label'>Jun</td><td class='cal-cell' id='day-2026-06-01' data-date='2026-06-01'>&nbsp;</td><td class='cal-cell' id='day-2026-06-02' data-date='2026-06-02'>&nbsp;</td><td class='cal-cell' id='day-2026-06-03' data-date='2026-06-03'>&nbsp;</td><td class='cal-cell' id='day-2026-06-04' data-date='2026-06-04'>&nbsp;</td><td class='cal-cell' id='day-2026-06-05' data-date='2026-06-05'>&nbsp;</td><td class='cal-cell' id='day-2026-06-06' data-date='2026-06-06'>&nbsp;</td><td class='cal-cell' id='day-2026-06-07' data-date='2026-06-07'>&nbsp;</td><td class='cal-cell' id='day-2026-06-08' data-date='2026-06-08'>&nbsp;</td><td class='cal-cell' id='day-2026-06-09' data-date='2026-06-09'>&nbsp;</td><td class='cal-cell' id='day-2026-06-10' data-date='2026-06-10'>&nbsp;</td><td class='cal-cell' id='day-2026-06-11' data-date='2026-06-11'>&nbsp;</td><td class='cal-cell' id='day-2026-06-12' data-date='2026-06-12'>&nbsp;</td><td class='cal-cell' id='day-2026-06-13' data-date='2026-06-13'>&nbsp;</td><td class='cal-cell' id='day-2026-06-14' data-date='2026-06-14'>&nbsp;</td><td class='cal-cell' id='day-2026-06-15' data-date='2026-06-15'>&nbsp;</td><td class='cal-cell' id='day-2026-06-16' data-date='2026-06-16'>&nbsp;</td><td class='cal-cell' id='day-2026-06-17' data-date='2026-06-17'>&nbsp;</td><td class='cal-cell' id='day-2026-06-18' data-date='2026-06-18'>&nbsp;</td><td class='cal-cell' id='day-2026-06-19' data-date='2026-06-19'>&nbsp;</td><td class='cal-cell' id='day-2026-06-20' data-date='2026-06-20'>&nbsp;</td><td class='cal-cell' id='day-2026-06-21' data-date='2026-06-21'>&nbsp;</td><td class='cal-cell' id='day-2026-06-22' data-date='2026-06-22'>&nbsp;</td><td class='cal-cell' id='day-2026-06-23' data-date='2026-06-23'>&nbsp;</td><td class='cal-cell' id='day-2026-06-24' data-date='2026-06-24'>&nbsp;</td><td class='cal-cell' id='day-2026-06-25' data-date='2026-06-25'>&nbsp;</td><td class='cal-cell' id='day-2026-06-26' data-date='2026-06-26'>&nbsp;</td><td class='cal-cell' id='day-2026-06-27' data-date='2026-06-27'>&nbsp;</td><td class='cal-cell' id='day-2026-06-28' data-date='2026-06-28'>&nbsp;</td><td class='cal-cell' id='day-2026-06-29' data-date='2026-06-29'>&nbsp;</td><td class='cal-cell' id='day-2026-06-30' data-date='2026-06-30'>&nbsp;</td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td></tr><tr><td class='month-label'>Jul</td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-cell' id='day-2026-07-01' data-date='2026-07-01'>&nbsp;</td><td class='cal-cell' id='day-2026-07-02' data-date='2026-07-02'>&nbsp;</td><td class='cal-cell' id='day-2026-07-03' data-date='2026-07-03'>&nbsp;</td><td class='cal-cell' id='day-2026-07-04' data-date='2026-07-04'>&nbsp;</td><td class='cal-cell' id='day-2026-07-05' data-date='2026-07-05'>&nbsp;</td><td class='cal-cell' id='day-2026-07-06' data-date='2026-07-06'>&nbsp;</td><td class='cal-cell' id='day-2026-07-07' data-date='2026-07-07'>&nbsp;</td><td class='cal-cell' id='day-2026-07-08' data-date='2026-07-08'>&nbsp;</td><td class='cal-cell' id='day-2026-07-09' data-date='2026-07-09'>&nbsp;</td><td class='cal-cell' id='day-2026-07-10' data-date='2026-07-10'>&nbsp;</td><td class='cal-cell' id='day-2026-07-11' data-date='2026-07-11'>&nbsp;</td><td class='cal-cell' id='day-2026-07-12' data-date='2026-07-12'>&nbsp;</td><td class='cal-cell' id='day-2026-07-13' data-date='2026-07-13'>&nbsp;</td><td class='cal-cell' id='day-2026-07-14' data-date='2026-07-14'>&nbsp;</td><td class='cal-cell' id='day-2026-07-15' data-date='2026-07-15'>&nbsp;</td><td class='cal-cell' id='day-2026-07-16' data-date='2026-07-16'>&nbsp;</td><td class='cal-cell' id='day-2026-07-17' data-date='2026-07-17'>&nbsp;</td><td class='cal-cell' id='day-2026-07-18' data-date='2026-07-18'>&nbsp;</td><td class='cal-cell' id='day-2026-07-19' data-date='2026-07-19'>&nbsp;</td><td class='cal-cell' id='day-2026-07-20' data-date='2026-07-20'>&nbsp;</td><td class='cal-cell' id='day-2026-07-21' data-date='2026-07-21'>&nbsp;</td><td class='cal-cell' id='day-2026-07-22' data-date='2026-07-22'>&nbsp;</td><td class='cal-cell' id='day-2026-07-23' data-date='2026-07-23'>&nbsp;</td><td class='cal-cell' id='day-2026-07-24' data-date='2026-07-24'>&nbsp;</td><td class='cal-cell' id='day-2026-07-25' data-date='2026-07-25'>&nbsp;</td><td class='cal-cell' id='day-2026-07-26' data-date='2026-07-26'>&nbsp;</td><td class='cal-cell' id='day-2026-07-27' data-date='2026-07-27'>&nbsp;</td><td class='cal-cell' id='day-2026-07-28' data-date='2026-07-28'>&nbsp;</td><td class='cal-cell' id='day-2026-07-29' data-date='2026-07-29'>&nbsp;</td><td class='cal-cell' id='day-2026-07-30' data-date='2026-07-30'>&nbsp;</td><td class='cal-cell' id='day-2026-07-31' data-date='2026-07-31'>&nbsp;</td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td></tr><tr><td class='month-label'>Aug</td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-cell' id='day-2026-08-01' data-date='2026-08-01'>&nbsp;</td><td class='cal-cell' id='day-2026-08-02' data-date='2026-08-02'>&nbsp;</td><td class='cal-cell' id='day-2026-08-03' data-date='2026-08-03'>&nbsp;</td><td class='cal-cell' id='day-2026-08-04' data-date='2026-08-04'>&nbsp;</td><td class='cal-cell' id='day-2026-08-05' data-date='2026-08-05'>&nbsp;</td><td class='cal-cell' id='day-2026-08-06' data-date='2026-08-06'>&nbsp;</td><td class='cal-cell' id='day-2026-08-07' data-date='2026-08-07'>&nbsp;</td><td class='cal-cell' id='day-2026-08-08' data-date='2026-08-08'>&nbsp;</td><td class='cal-cell' id='day-2026-08-09' data-date='2026-08-09'>&nbsp;</td><td class='cal-cell' id='day-2026-08-10' data-date='2026-08-10'>&nbsp;</td><td class='cal-cell' id='day-2026-08-11' data-date='2026-08-11'>&nbsp;</td><td class='cal-cell' id='day-2026-08-12' data-date='2026-08-12'>&nbsp;</td><td class='cal-cell' id='day-2026-08-13' data-date='2026-08-13'>&nbsp;</td><td class='cal-cell' id='day-2026-08-14' data-date='2026-08-14'>&nbsp;</td><td class='cal-cell' id='day-2026-08-15' data-date='2026-08-15'>&nbsp;</td><td class='cal-cell' id='day-2026-08-16' data-date='2026-08-16'>&nbsp;</td><td class='cal-cell' id='day-2026-08-17' data-date='2026-08-17'>&nbsp;</td><td class='cal-cell' id='day-2026-08-18' data-date='2026-08-18'>&nbsp;</td><td class='cal-cell' id='day-2026-08-19' data-date='2026-08-19'>&nbsp;</td><td class='cal-cell' id='day-2026-08-20' data-date='2026-08-20'>&nbsp;</td><td class='cal-cell' id='day-2026-08-21' data-date='2026-08-21'>&nbsp;</td><td class='cal-cell' id='day-2026-08-22' data-date='2026-08-22'>&nbsp;</td><td class='cal-cell' id='day-2026-08-23' data-date='2026-08-23'>&nbsp;</td><td class='cal-cell' id='day-2026-08-24' data-date='2026-08-24'>&nbsp;</td><td class='cal-cell' id='day-2026-08-25' data-date='2026-08-25'>&nbsp;</td><td class='cal-cell' id='day-2026-08-26' data-date='2026-08-26'>&nbsp;</td><td class='cal-cell' id='day-2026-08-27' data-date='2026-08-27'>&nbsp;</td><td class='cal-cell' id='day-2026-08-28' data-date='2026-08-28'>&nbsp;</td><td class='cal-cell' id='day-2026-08-29' data-date='2026-08-29'>&nbsp;</td><td class='cal-cell' id='day-2026-08-30' data-date='2026-08-30'>&nbsp;</td><td class='cal-cell' id='day-2026-08-31' data-date='2026-08-31'>&nbsp;</td><td class='cal-empty'></td></tr><tr><td class='month-label'>Sep</td><td class='cal-empty'></td><td class='cal-cell' id='day-2026-09-01' data-date='2026-09-01'>&nbsp;</td><td class='cal-cell' id='day-2026-09-02' data-date='2026-09-02'>&nbsp;</td><td class='cal-cell' id='day-2026-09-03' data-date='2026-09-03'>&nbsp;</td><td class='cal-cell' id='day-2026-09-04' data-date='2026-09-04'>&nbsp;</td><td class='cal-cell' id='day-2026-09-05' data-date='2026-09-05'>&nbsp;</td><td class='cal-cell' id='day-2026-09-06' data-date='2026-09-06'>&nbsp;</td><td class='cal-cell' id='day-2026-09-07' data-date='2026-09-07'>&nbsp;</td><td class='cal-cell' id='day-2026-09-08' data-date='2026-09-08'>&nbsp;</td><td class='cal-cell' id='day-2026-09-09' data-date='2026-09-09'>&nbsp;</td><td class='cal-cell' id='day-2026-09-10' data-date='2026-09-10'>&nbsp;</td><td class='cal-cell' id='day-2026-09-11' data-date='2026-09-11'>&nbsp;</td><td class='cal-cell' id='day-2026-09-12' data-date='2026-09-12'>&nbsp;</td><td class='cal-cell' id='day-2026-09-13' data-date='2026-09-13'>&nbsp;</td><td class='cal-cell' id='day-2026-09-14' data-date='2026-09-14'>&nbsp;</td><td class='cal-cell' id='day-2026-09-15' data-date='2026-09-15'>&nbsp;</td><td class='cal-cell' id='day-2026-09-16' data-date='2026-09-16'>&nbsp;</td><td class='cal-cell' id='day-2026-09-17' data-date='2026-09-17'>&nbsp;</td><td class='cal-cell' id='day-2026-09-18' data-date='2026-09-18'>&nbsp;</td><td class='cal-cell' id='day-2026-09-19' data-date='2026-09-19'>&nbsp;</td><td class='cal-cell' id='day-2026-09-20' data-date='2026-09-20'>&nbsp;</td><td class='cal-cell' id='day-2026-09-21' data-date='2026-09-21'>&nbsp;</td><td class='cal-cell' id='day-2026-09-22' data-date='2026-09-22'>&nbsp;</td><td class='cal-cell' id='day-2026-09-23' data-date='2026-09-23'>&nbsp;</td><td class='cal-cell' id='day-2026-09-24' data-date='2026-09-24'>&nbsp;</td><td class='cal-cell' id='day-2026-09-25' data-date='2026-09-25'>&nbsp;</td><td class='cal-cell' id='day-2026-09-26' data-date='2026-09-26'>&nbsp;</td><td class='cal-cell' id='day-2026-09-27' data-date='2026-09-27'>&nbsp;</td><td class='cal-cell' id='day-2026-09-28' data-date='2026-09-28'>&nbsp;</td><td class='cal-cell' id='day-2026-09-29' data-date='2026-09-29'>&nbsp;</td><td class='cal-cell' id='day-2026-09-30' data-date='2026-09-30'>&nbsp;</td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td></tr><tr><td class='month-label'>Oct</td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-cell' id='day-2026-10-01' data-date='2026-10-01'>&nbsp;</td><td class='cal-cell' id='day-2026-10-02' data-date='2026-10-02'>&nbsp;</td><td class='cal-cell' id='day-2026-10-03' data-date='2026-10-03'>&nbsp;</td><td class='cal-cell' id='day-2026-10-04' data-date='2026-10-04'>&nbsp;</td><td class='cal-cell' id='day-2026-10-05' data-date='2026-10-05'>&nbsp;</td><td class='cal-cell' id='day-2026-10-06' data-date='2026-10-06'>&nbsp;</td><td class='cal-cell' id='day-2026-10-07' data-date='2026-10-07'>&nbsp;</td><td class='cal-cell' id='day-2026-10-08' data-date='2026-10-08'>&nbsp;</td><td class='cal-cell' id='day-2026-10-09' data-date='2026-10-09'>&nbsp;</td><td class='cal-cell' id='day-2026-10-10' data-date='2026-10-10'>&nbsp;</td><td class='cal-cell' id='day-2026-10-11' data-date='2026-10-11'>&nbsp;</td><td class='cal-cell' id='day-2026-10-12' data-date='2026-10-12'>&nbsp;</td><td class='cal-cell' id='day-2026-10-13' data-date='2026-10-13'>&nbsp;</td><td class='cal-cell' id='day-2026-10-14' data-date='2026-10-14'>&nbsp;</td><td class='cal-cell' id='day-2026-10-15' data-date='2026-10-15'>&nbsp;</td><td class='cal-cell' id='day-2026-10-16' data-date='2026-10-16'>&nbsp;</td><td class='cal-cell' id='day-2026-10-17' data-date='2026-10-17'>&nbsp;</td><td class='cal-cell' id='day-2026-10-18' data-date='2026-10-18'>&nbsp;</td><td class='cal-cell' id='day-2026-10-19' data-date='2026-10-19'>&nbsp;</td><td class='cal-cell' id='day-2026-10-20' data-date='2026-10-20'>&nbsp;</td><td class='cal-cell' id='day-2026-10-21' data-date='2026-10-21'>&nbsp;</td><td class='cal-cell' id='day-2026-10-22' data-date='2026-10-22'>&nbsp;</td><td class='cal-cell' id='day-2026-10-23' data-date='2026-10-23'>&nbsp;</td><td class='cal-cell' id='day-2026-10-24' data-date='2026-10-24'>&nbsp;</td><td class='cal-cell' id='day-2026-10-25' data-date='2026-10-25'>&nbsp;</td><td class='cal-cell' id='day-2026-10-26' data-date='2026-10-26'>&nbsp;</td><td class='cal-cell' id='day-2026-10-27' data-date='2026-10-27'>&nbsp;</td><td class='cal-cell' id='day-2026-10-28' data-date='2026-10-28'>&nbsp;</td><td class='cal-cell' id='day-2026-10-29' data-date='2026-10-29'>&nbsp;</td><td class='cal-cell' id='day-2026-10-30' data-date='2026-10-30'>&nbsp;</td><td class='cal-cell' id='day-2026-10-31' data-date='2026-10-31'>&nbsp;</td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td></tr><tr><td class='month-label'>Nov</td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-cell' id='day-2026-11-01' data-date='2026-11-01'>&nbsp;</td><td class='cal-cell' id='day-2026-11-02' data-date='2026-11-02'>&nbsp;</td><td class='cal-cell' id='day-2026-11-03' data-date='2026-11-03'>&nbsp;</td><td class='cal-cell' id='day-2026-11-04' data-date='2026-11-04'>&nbsp;</td><td class='cal-cell' id='day-2026-11-05' data-date='2026-11-05'>&nbsp;</td><td class='cal-cell' id='day-2026-11-06' data-date='2026-11-06'>&nbsp;</td><td class='cal-cell' id='day-2026-11-07' data-date='2026-11-07'>&nbsp;</td><td class='cal-cell' id='day-2026-11-08' data-date='2026-11-08'>&nbsp;</td><td class='cal-cell' id='day-2026-11-09' data-date='2026-11-09'>&nbsp;</td><td class='cal-cell' id='day-2026-11-10' data-date='2026-11-10'>&nbsp;</td><td class='cal-cell' id='day-2026-11-11' data-date='2026-11-11'>&nbsp;</td><td class='cal-cell' id='day-2026-11-12' data-date='2026-11-12'>&nbsp;</td><td class='cal-cell' id='day-2026-11-13' data-date='2026-11-13'>&nbsp;</td><td class='cal-cell' id='day-2026-11-14' data-date='2026-11-14'>&nbsp;</td><td class='cal-cell' id='day-2026-11-15' data-date='2026-11-15'>&nbsp;</td><td class='cal-cell' id='day-2026-11-16' data-date='2026-11-16'>&nbsp;</td><td class='cal-cell' id='day-2026-11-17' data-date='2026-11-17'>&nbsp;</td><td class='cal-cell' id='day-2026-11-18' data-date='2026-11-18'>&nbsp;</td><td class='cal-cell' id='day-2026-11-19' data-date='2026-11-19'>&nbsp;</td><td class='cal-cell' id='day-2026-11-20' data-date='2026-11-20'>&nbsp;</td><td class='cal-cell' id='day-2026-11-21' data-date='2026-11-21'>&nbsp;</td><td class='cal-cell' id='day-2026-11-22' data-date='2026-11-22'>&nbsp;</td><td class='cal-cell' id='day-2026-11-23' data-date='2026-11-23'>&nbsp;</td><td class='cal-cell' id='day-2026-11-24' data-date='2026-11-24'>&nbsp;</td><td class='cal-cell' id='day-2026-11-25' data-date='2026-11-25'>&nbsp;</td><td class='cal-cell' id='day-2026-11-26' data-date='2026-11-26'>&nbsp;</td><td class='cal-cell' id='day-2026-11-27' data-date='2026-11-27'>&nbsp;</td><td class='cal-cell' id='day-2026-11-28' data-date='2026-11-28'>&nbsp;</td><td class='cal-cell' id='day-2026-11-29' data-date='2026-11-29'>&nbsp;</td><td class='cal-cell' id='day-2026-11-30' data-date='2026-11-30'>&nbsp;</td><td class='cal-empty'></td></tr><tr><td class='month-label'>Dec</td><td class='cal-empty'></td><td class='cal-cell' id='day-2026-12-01' data-date='2026-12-01'>&nbsp;</td><td class='cal-cell' id='day-2026-12-02' data-date='2026-12-02'>&nbsp;</td><td class='cal-cell' id='day-2026-12-03' data-date='2026-12-03'>&nbsp;</td><td class='cal-cell' id='day-2026-12-04' data-date='2026-12-04'>&nbsp;</td><td class='cal-cell' id='day-2026-12-05' data-date='2026-12-05'>&nbsp;</td><td class='cal-cell' id='day-2026-12-06' data-date='2026-12-06'>&nbsp;</td><td class='cal-cell' id='day-2026-12-07' data-date='2026-12-07'>&nbsp;</td><td class='cal-cell' id='day-2026-12-08' data-date='2026-12-08'>&nbsp;</td><td class='cal-cell' id='day-2026-12-09' data-date='2026-12-09'>&nbsp;</td><td class='cal-cell' id='day-2026-12-10' data-date='2026-12-10'>&nbsp;</td><td class='cal-cell' id='day-2026-12-11' data-date='2026-12-11'>&nbsp;</td><td class='cal-cell' id='day-2026-12-12' data-date='2026-12-12'>&nbsp;</td><td class='cal-cell' id='day-2026-12-13' data-date='2026-12-13'>&nbsp;</td><td class='cal-cell' id='day-2026-12-14' data-date='2026-12-14'>&nbsp;</td><td class='cal-cell' id='day-2026-12-15' data-date='2026-12-15'>&nbsp;</td><td class='cal-cell' id='day-2026-12-16' data-date='2026-12-16'>&nbsp;</td><td class='cal-cell' id='day-2026-12-17' data-date='2026-12-17'>&nbsp;</td><td class='cal-cell' id='day-2026-12-18' data-date='2026-12-18'>&nbsp;</td><td class='cal-cell' id='day-2026-12-19' data-date='2026-12-19'>&nbsp;</td><td class='cal-cell' id='day-2026-12-20' data-date='2026-12-20'>&nbsp;</td><td class='cal-cell' id='day-2026-12-21' data-date='2026-12-21'>&nbsp;</td><td class='cal-cell' id='day-2026-12-22' data-date='2026-12-22'>&nbsp;</td><td class='cal-cell' id='day-2026-12-23' data-date='2026-12-23'>&nbsp;</td><td class='cal-cell' id='day-2026-12-24' data-date='2026-12-24'>&nbsp;</td><td class='cal-cell' id='day-2026-12-25' data-date='2026-12-25'>&nbsp;</td><td class='cal-cell' id='day-2026-12-26' data-date='2026-12-26'>&nbsp;</td><td class='cal-cell' id='day-2026-12-27' data-date='2026-12-27'>&nbsp;</td><td class='cal-cell' id='day-2026-12-28' data-date='2026-12-28'>&nbsp;</td><td class='cal-cell' id='day-2026-12-29' data-date='2026-12-29'>&nbsp;</td><td class='cal-cell' id='day-2026-12-30' data-date='2026-12-30'>&nbsp;</td><td class='cal-cell' id='day-2026-12-31' data-date='2026-12-31'>&nbsp;</td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td><td class='cal-empty'></td></tr></tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#111827"></div> Past</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Workout</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#FFD600"></div> Today</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div> Fall Back Zone</div>
+      <div class="legend-item"><span style="font-size:11px;font-weight:700">&#10003;+</span>&nbsp;Full Day (All 7)</div>
+      <div class="legend-item"><span style="font-size:11px;font-weight:700">&#10003;</span>&nbsp;Morning Complete</div>
+      <div class="legend-item"><span style="font-size:11px;font-weight:700">&#189;</span>&nbsp;Partial Morning</div>
+    </div>
+  </div>
+
+  <!-- Roadmap -->
+  <div class="card">
+    <h2 style="margin-bottom:4px">&#128506;&#65039; Product Roadmap</h2>
+    <p style="font-size:12px;color:var(--mid);margin-bottom:14px">Agile scrum-inspired &middot; drag to reprioritize &middot; click to detail</p>
+    <div class="roadmap-grid">
+      <div class="roadmap-col" id="col-short" ondragover="onDragOver(event,'short')" ondrop="onDrop(event,'short')">
+        <div class="roadmap-col-header">
+          <span class="roadmap-col-title">&#127939; Short Term</span>
+          <span class="roadmap-col-badge badge-short" id="badge-short">0</span>
+        </div>
+        <button class="roadmap-add" onclick="openNew('short')">&#65291; Add Item</button>
+        <div id="cards-short"></div>
+      </div>
+      <div class="roadmap-col" id="col-medium" ondragover="onDragOver(event,'medium')" ondrop="onDrop(event,'medium')">
+        <div class="roadmap-col-header">
+          <span class="roadmap-col-title">&#128200; Medium Term</span>
+          <span class="roadmap-col-badge badge-medium" id="badge-medium">0</span>
+        </div>
+        <button class="roadmap-add" onclick="openNew('medium')">&#65291; Add Item</button>
+        <div id="cards-medium"></div>
+      </div>
+      <div class="roadmap-col" id="col-long" ondragover="onDragOver(event,'long')" ondrop="onDrop(event,'long')">
+        <div class="roadmap-col-header">
+          <span class="roadmap-col-title">&#128640; Long Term</span>
+          <span class="roadmap-col-badge badge-long" id="badge-long">0</span>
+        </div>
+        <button class="roadmap-add" onclick="openNew('long')">&#65291; Add Item</button>
+        <div id="cards-long"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Roadmap Modal -->
+<div class="rm-modal-overlay" id="rmModal">
+  <div class="rm-modal">
+    <div class="rm-modal-header">
+      <span id="rm-modal-title" style="font-size:16px;font-weight:700;color:var(--white)">New Item</span>
+      <button class="rm-modal-close" onclick="closeModal()">&#10005;</button>
+    </div>
+    <div class="rm-modal-body">
+      <div class="rm-field">
+        <div class="rm-label">Title</div>
+        <input class="rm-inp" id="rm-title" placeholder="What's the initiative?">
+      </div>
+      <div class="rm-field">
+        <div class="rm-label">Essence — the high-level why</div>
+        <input class="rm-inp" id="rm-essence" placeholder="One line describing the value">
+      </div>
+      <div class="rm-field">
+        <div class="rm-label">Priority</div>
+        <select class="rm-select" id="rm-priority">
+          <option value="high">&#128308; High</option>
+          <option value="med" selected>&#128993; Medium</option>
+          <option value="low">&#128994; Low</option>
+        </select>
+      </div>
+      <div class="rm-field">
+        <div class="rm-label">Notes</div>
+        <textarea class="rm-textarea" id="rm-notes" placeholder="Background, context, links, anything..."></textarea>
+      </div>
+      <div class="rm-field">
+        <div class="rm-label">Tasks / Acceptance Criteria</div>
+        <div id="rm-tasks-list"></div>
+        <div class="rm-add-task">
+          <input class="rm-inp" id="rm-new-task" placeholder="Add a task or criterion..." style="flex:1">
+          <button onclick="addModalTask()" style="padding:8px 14px;background:var(--yellow);color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px">&#65291;</button>
+        </div>
+      </div>
+      <div class="rm-field">
+        <div class="rm-label">Reference Links</div>
+        <div id="rm-files-list"></div>
+        <div class="rm-add-task">
+          <input class="rm-inp" id="rm-file-name" placeholder="Label" style="flex:1">
+          <input class="rm-inp" id="rm-file-url" placeholder="https://..." style="flex:2">
+          <button onclick="addModalFile()" style="padding:8px 14px;background:var(--yellow);color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px">&#65291;</button>
+        </div>
+      </div>
+      <button class="rm-save-btn" onclick="saveModal()">&#128190; Save Item</button>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  BMH Solutions LLC &nbsp;&middot;&nbsp; PO Box 563, Green, OH 44232 &nbsp;&middot;&nbsp; 614.704.3088
+</div>
+
+
+
+<script>
+// ═══════════════════════════════════════════════════
+// DATA BRIDGE — Python data injected as JS constants
+// ═══════════════════════════════════════════════════
+const LOAD_DATES = {"2026-01-06": {"pickup": 1, "delivery": 0}, "2026-01-07": {"pickup": 0, "delivery": 1}, "2026-01-09": {"pickup": 1, "delivery": 0}, "2026-01-12": {"pickup": 1, "delivery": 1}, "2026-01-14": {"pickup": 0, "delivery": 1}, "2026-01-15": {"pickup": 1, "delivery": 0}, "2026-01-16": {"pickup": 1, "delivery": 1}, "2026-01-19": {"pickup": 0, "delivery": 1}, "2026-01-20": {"pickup": 1, "delivery": 0}, "2026-01-22": {"pickup": 1, "delivery": 1}, "2026-01-23": {"pickup": 1, "delivery": 1}, "2026-01-26": {"pickup": 1, "delivery": 2}, "2026-01-28": {"pickup": 1, "delivery": 0}, "2026-01-29": {"pickup": 1, "delivery": 1}, "2026-02-02": {"pickup": 0, "delivery": 2}, "2026-01-30": {"pickup": 1, "delivery": 0}, "2026-02-04": {"pickup": 1, "delivery": 0}, "2026-02-05": {"pickup": 0, "delivery": 2}, "2026-02-03": {"pickup": 1, "delivery": 0}, "2026-02-11": {"pickup": 1, "delivery": 0}, "2026-02-12": {"pickup": 1, "delivery": 1}, "2026-02-13": {"pickup": 1, "delivery": 1}, "2026-02-16": {"pickup": 1, "delivery": 1}, "2026-02-17": {"pickup": 1, "delivery": 2}, "2026-02-19": {"pickup": 1, "delivery": 0}, "2026-02-23": {"pickup": 0, "delivery": 1}, "2026-02-24": {"pickup": 1, "delivery": 0}, "2026-02-25": {"pickup": 0, "delivery": 1}, "2026-02-26": {"pickup": 1, "delivery": 0}, "2026-02-27": {"pickup": 1, "delivery": 1}, "2026-03-02": {"pickup": 0, "delivery": 1}, "2026-03-03": {"pickup": 1, "delivery": 0}, "2026-03-05": {"pickup": 0, "delivery": 1}, "2026-03-09": {"pickup": 1, "delivery": 0}, "2026-03-10": {"pickup": 1, "delivery": 1}, "2026-03-12": {"pickup": 1, "delivery": 1}, "2026-03-14": {"pickup": 0, "delivery": 1}, "2026-03-16": {"pickup": 1, "delivery": 0}, "2026-03-17": {"pickup": 0, "delivery": 1}, "2026-03-19": {"pickup": 1, "delivery": 1}, "2026-03-24": {"pickup": 1, "delivery": 0}, "2026-03-26": {"pickup": 1, "delivery": 1}, "2026-03-27": {"pickup": 1, "delivery": 1}, "2026-03-30": {"pickup": 0, "delivery": 1}, "2026-04-02": {"pickup": 1, "delivery": 0}, "2026-04-03": {"pickup": 0, "delivery": 1}, "2026-04-07": {"pickup": 1, "delivery": 1}, "2026-04-08": {"pickup": 1, "delivery": 0}};
+
+// ── JSONBin cloud sync (rendered by Jinja2, must stay outside raw block) ────
+const BIN_ID  = '69af7d2043b1c97be9c74547';
+const BIN_KEY = '$2a$10$fk0bJzKyptJEhlVQZD.tK.XmYhJU5oGZdl2qHllLQ0vq.sAIBW6aO';
+
+
+const MORNING_ITEMS = 3;
+const DAILY_ITEMS   = 4;
+const TOTAL_ITEMS   = 7;
+const TODAY         = new Date().toISOString().slice(0, 10);
+let   activeDate    = TODAY;
+
+const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
+let DB = { routine: {}, workout: {}, above: {}, roadmap: {short:[], medium:[], long:[]} };
+let saveTimer = null;
+
+async function loadFromCloud() {
+  try {
+    const r = await fetch(BIN_URL, { headers: { 'X-Master-Key': BIN_KEY } });
+    const j = await r.json();
+    if (j.record) {
+      DB.routine  = j.record.routine  || {};
+      DB.workout  = j.record.workout  || {};
+      DB.above    = j.record.above    || {};
+      DB.roadmap  = j.record.roadmap  || {short:[], medium:[], long:[]};
+    }
+  } catch(e) { console.warn('JSONBin load failed', e); }
+}
+
+function saveToCloud() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try {
+      await fetch(BIN_URL, {
+        method: 'PUT',
+        headers: { 'X-Master-Key': BIN_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify(DB)
+      });
+    } catch(e) { console.warn('JSONBin save failed', e); }
+  }, 800);
+}
+
+function getRoutine(dateStr) { return DB.routine[dateStr] || []; }
+function setRoutine(dateStr, arr) { DB.routine[dateStr] = arr; saveToCloud(); }
+function getAbove(dateStr) { return !!DB.above[dateStr]; }
+function setAbove(dateStr, val) { if (val) DB.above[dateStr] = 1; else delete DB.above[dateStr]; saveToCloud(); }
+function getWorkout(dateStr) { return !!DB.workout[dateStr]; }
+function setWorkout(dateStr, val) { if (val) DB.workout[dateStr] = 1; else delete DB.workout[dateStr]; saveToCloud(); }
+
+function fmtDisplay(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
+}
+function shiftDay(delta) {
+  const d = new Date(activeDate + 'T12:00:00');
+  d.setDate(d.getDate() + delta);
+  activeDate = d.toISOString().slice(0, 10);
+  loadRoutineUI();
+  updateCalendar();
+}
+
+function loadRoutineUI() {
+  document.getElementById('routine-date-display').textContent = fmtDisplay(activeDate);
+  const checked = getRoutine(activeDate);
+  for (let i = 0; i < TOTAL_ITEMS; i++) {
+    document.getElementById('chk-' + i).checked = checked.includes(i);
+  }
+  updateScore();
+  const wo = getWorkout(activeDate);
+  const btn = document.getElementById('workout-btn');
+  btn.textContent = wo ? '\u2713 Worked Out!' : '\u2717 No Workout';
+  btn.className   = 'workout-btn' + (wo ? ' active' : '');
+}
+
+function saveRoutine() {
+  const checked = [];
+  for (let i = 0; i < TOTAL_ITEMS; i++) {
+    if (document.getElementById('chk-' + i).checked) checked.push(i);
+  }
+  setRoutine(activeDate, checked);
+  updateScore();
+  updateCellAppearance(activeDate);
+}
+
+function updateScore() {
+  const checked = getRoutine(activeDate);
+  const morningDone = [0,1,2].filter(i => checked.includes(i)).length;
+  const dailyDone   = [3,4,5,6].filter(i => checked.includes(i)).length;
+  const total = checked.length;
+  const pct   = Math.round(total / TOTAL_ITEMS * 100);
+  document.getElementById('score-fill').style.width  = pct + '%';
+  document.getElementById('score-label').textContent =
+    `Morning ${morningDone}/3  \u00b7  Daily ${dailyDone}/4  \u00b7  Total ${total}/7`;
+}
+
+function toggleAbove() {
+  const cur = getAbove(activeDate);
+  setAbove(activeDate, !cur);
+  loadRoutineUI();
+  updateCellAppearance(activeDate);
+}
+function toggleWorkout() {
+  const cur = getWorkout(activeDate);
+  setWorkout(activeDate, !cur);
+  loadRoutineUI();
+  updateCellAppearance(activeDate);
+}
+
+function routineIndicator(dateStr) {
+  const checked = getRoutine(dateStr);
+  const morningDone = [0,1,2].every(i => checked.includes(i));
+  const dailyDone   = [3,4,5,6].every(i => checked.includes(i));
+  const anyMorning  = [0,1,2].some(i => checked.includes(i));
+  if (morningDone && dailyDone) return '\u2713+';
+  if (morningDone)              return '\u2713';
+  if (anyMorning)               return '\u00bd';
+  return '';
+}
+
+function updateCellAppearance(dateStr) {
+  const cell = document.getElementById('day-' + dateStr);
+  if (!cell) return;
+  const today    = TODAY;
+  const isPast   = dateStr < today;
+  const isToday  = dateStr === today;
+  const isActive = dateStr === activeDate;
+  const workout  = getWorkout(dateStr);
+  const indicator = routineIndicator(dateStr);
+  let bg, txt, border = 'none';
+  const dayNum  = new Date(dateStr + 'T12:00:00').getDate();
+  const dow     = new Date(dateStr + 'T12:00:00').getDay();
+  const isWeekend = (dow === 0 || dow === 6);
+  const FALLBACK_START = '2026-10-25';
+  const FALLBACK_END   = '2026-11-08';
+  const isFallbackZone = !isPast && !isToday && dateStr >= FALLBACK_START && dateStr <= FALLBACK_END;
+
+  if (isToday)               { bg = '#FFD600'; txt = '#000'; }
+  else if (workout)          { bg = '#16a34a'; txt = 'white'; }
+  else if (isPast)           { bg = '#111827'; txt = '#6b7280'; }
+  else if (isFallbackZone)   { bg = '#ef4444'; txt = 'white'; }
+  else if (isWeekend)        { bg = '#b5a642'; txt = 'white'; }
+  else                       { bg = '#2a2a2a'; txt = '#e5e7eb'; }
+
+  if (isActive) border = '2px solid #FFD600';
+  if (indicator && isPast && !workout) txt = 'white';
+  cell.style.background    = bg;
+  cell.style.color         = txt;
+  cell.style.outline       = border;
+  cell.style.outlineOffset = '-2px';
+  cell.style.position      = 'relative';
+
+  if (indicator) {
+    cell.innerHTML =
+      `<span style="position:absolute;top:2px;left:2px;font-size:7px;font-weight:600;opacity:0.75;line-height:1">${dayNum}</span>` +
+      `<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:${indicator==='\u00bd'?'9px':'20px'};font-weight:800">${indicator}</span>`;
+  } else {
+    cell.innerHTML =
+      `<span style="position:absolute;top:2px;left:2px;font-size:7px;font-weight:600;line-height:1">${dayNum}</span>`;
+  }
+}
+
+function updateCalendar() {
+  document.querySelectorAll('.cal-cell').forEach(cell => {
+    updateCellAppearance(cell.dataset.date);
+  });
+}
+
+document.querySelectorAll('.cal-cell').forEach(cell => {
+  cell.addEventListener('click', () => {
+    activeDate = cell.dataset.date;
+    loadRoutineUI();
+    updateCalendar();
+  });
+});
+
+// ── Roadmap ──────────────────────────────────────────────────────────────────
+let rmCurrentCol  = 'short';
+let rmEditId      = null;
+let rmDragId      = null;
+let rmDragCol     = null;
+let rmModalTasks  = [];
+let rmModalFiles  = [];
+
+function rmId() { return 'rm_' + Date.now() + '_' + Math.random().toString(36).slice(2,6); }
+
+function openNew(col) {
+  rmCurrentCol = col; rmEditId = null; rmModalTasks = []; rmModalFiles = [];
+  document.getElementById('rm-title').value = '';
+  document.getElementById('rm-essence').value = '';
+  document.getElementById('rm-notes').value = '';
+  document.getElementById('rm-priority').value = 'med';
+  document.getElementById('rm-new-task').value = '';
+  document.getElementById('rm-file-name').value = '';
+  document.getElementById('rm-file-url').value = '';
+  document.getElementById('rm-modal-title').textContent = 'New Item';
+  renderModalTasks(); renderModalFiles();
+  document.getElementById('rmModal').classList.add('show');
+  setTimeout(() => document.getElementById('rm-title').focus(), 100);
+}
+
+function openEdit(col, id) {
+  const item = DB.roadmap[col].find(x => x.id === id);
+  if (!item) return;
+  rmCurrentCol = col; rmEditId = id;
+  rmModalTasks = JSON.parse(JSON.stringify(item.tasks || []));
+  rmModalFiles = JSON.parse(JSON.stringify(item.files || []));
+  document.getElementById('rm-title').value = item.title || '';
+  document.getElementById('rm-essence').value = item.essence || '';
+  document.getElementById('rm-notes').value = item.notes || '';
+  document.getElementById('rm-priority').value = item.priority || 'med';
+  document.getElementById('rm-modal-title').textContent = 'Edit Item';
+  renderModalTasks(); renderModalFiles();
+  document.getElementById('rmModal').classList.add('show');
+}
+
+function closeModal() { document.getElementById('rmModal').classList.remove('show'); }
+document.getElementById('rmModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+function addModalTask() {
+  const inp = document.getElementById('rm-new-task');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  rmModalTasks.push({id: rmId(), text: txt, done: false});
+  inp.value = '';
+  renderModalTasks();
+}
+document.getElementById('rm-new-task').addEventListener('keydown', e => { if(e.key==='Enter') addModalTask(); });
+
+function toggleModalTask(id) {
+  const t = rmModalTasks.find(x => x.id === id);
+  if (t) { t.done = !t.done; renderModalTasks(); }
+}
+function deleteModalTask(id) {
+  rmModalTasks = rmModalTasks.filter(x => x.id !== id);
+  renderModalTasks();
+}
+function renderModalTasks() {
+  document.getElementById('rm-tasks-list').innerHTML = rmModalTasks.map(t => `
+    <div class="rm-task-row">
+      <input type="checkbox" class="rm-task-cb" ${t.done?'checked':''} onchange="toggleModalTask('${t.id}')">
+      <span class="rm-task-text ${t.done?'done':''}">${t.text}</span>
+      <button class="rm-task-del" onclick="deleteModalTask('${t.id}')">&#10005;</button>
+    </div>`).join('');
+}
+
+function addModalFile() {
+  const name = document.getElementById('rm-file-name').value.trim();
+  const url  = document.getElementById('rm-file-url').value.trim();
+  if (!url) return;
+  rmModalFiles.push({id: rmId(), name: name || url, url});
+  document.getElementById('rm-file-name').value = '';
+  document.getElementById('rm-file-url').value  = '';
+  renderModalFiles();
+}
+function deleteModalFile(id) {
+  rmModalFiles = rmModalFiles.filter(x => x.id !== id);
+  renderModalFiles();
+}
+function renderModalFiles() {
+  document.getElementById('rm-files-list').innerHTML = rmModalFiles.map(f => `
+    <div class="rm-file-row">
+      <a class="rm-file-link" href="${f.url}" target="_blank">&#128206; ${f.name}</a>
+      <button class="rm-task-del" onclick="deleteModalFile('${f.id}')">&#10005;</button>
+    </div>`).join('');
+}
+
+function saveModal() {
+  const title = document.getElementById('rm-title').value.trim();
+  if (!title) { alert('Add a title'); return; }
+  const item = {
+    id:       rmEditId || rmId(),
+    title,
+    essence:  document.getElementById('rm-essence').value.trim(),
+    notes:    document.getElementById('rm-notes').value.trim(),
+    priority: document.getElementById('rm-priority').value,
+    tasks:    rmModalTasks,
+    files:    rmModalFiles,
+    created:  rmEditId ? (DB.roadmap[rmCurrentCol].find(x=>x.id===rmEditId)||{}).created || Date.now() : Date.now()
+  };
+  if (rmEditId) {
+    const idx = DB.roadmap[rmCurrentCol].findIndex(x => x.id === rmEditId);
+    if (idx > -1) DB.roadmap[rmCurrentCol][idx] = item;
+  } else {
+    DB.roadmap[rmCurrentCol].unshift(item);
+  }
+  saveToCloud(); renderRoadmap(); closeModal();
+}
+
+function deleteRoadmapItem(col, id, e) {
+  e.stopPropagation();
+  if (!confirm('Delete this item?')) return;
+  DB.roadmap[col] = DB.roadmap[col].filter(x => x.id !== id);
+  saveToCloud(); renderRoadmap();
+}
+
+function renderRoadmap() {
+  ['short','medium','long'].forEach(col => {
+    const items = DB.roadmap[col] || [];
+    document.getElementById('badge-' + col).textContent = items.length;
+    document.getElementById('cards-' + col).innerHTML = items.map(item => {
+      const done  = (item.tasks||[]).filter(t=>t.done).length;
+      const total = (item.tasks||[]).length;
+      return `<div class="roadmap-card priority-${item.priority||'med'}"
+        draggable="true"
+        ondragstart="onDragStart(event,'${col}','${item.id}')"
+        ondragend="onDragEnd(event)"
+        onclick="openEdit('${col}','${item.id}')">
+        <button class="rc-delete" onclick="deleteRoadmapItem('${col}','${item.id}',event)">&#10005;</button>
+        <div class="rc-title">${item.title}</div>
+        ${item.essence ? `<div class="rc-essence">${item.essence}</div>` : ''}
+        <div class="rc-meta">
+          ${total > 0 ? `<span class="rc-tasks-done">${done}/${total} tasks</span>` : ''}
+          ${item.notes ? '<span>&#128221; Notes</span>' : ''}
+          ${(item.files||[]).length > 0 ? `<span>&#128206; ${item.files.length}</span>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  });
+}
+
+function onDragStart(e, col, id) {
+  rmDragId = id; rmDragCol = col;
+  setTimeout(() => e.target.classList.add('dragging'), 0);
+}
+function onDragEnd(e) {
+  e.target.classList.remove('dragging');
+  document.querySelectorAll('.roadmap-card').forEach(c => c.classList.remove('drag-over'));
+}
+function onDragOver(e, col) {
+  e.preventDefault();
+  const cards = document.querySelectorAll('#cards-' + col + ' .roadmap-card');
+  cards.forEach(c => c.classList.remove('drag-over'));
+  const target = e.target.closest('.roadmap-card');
+  if (target) target.classList.add('drag-over');
+}
+function onDrop(e, col) {
+  e.preventDefault();
+  if (!rmDragId) return;
+  let item = null;
+  DB.roadmap[rmDragCol] = DB.roadmap[rmDragCol].filter(x => { if(x.id===rmDragId){ item=x; return false; } return true; });
+  if (!item) return;
+  const target = e.target.closest('.roadmap-card');
+  const destItems = DB.roadmap[col];
+  if (target) {
+    const targetId = target.onclick?.toString().match(/'([^']+)'\)$/)?.[1];
+    const idx = destItems.findIndex(x => x.id === targetId);
+    if (idx > -1) destItems.splice(idx, 0, item);
+    else destItems.push(item);
+  } else {
+    destItems.push(item);
+  }
+  document.querySelectorAll('.roadmap-card').forEach(c => c.classList.remove('drag-over'));
+  saveToCloud(); renderRoadmap();
+  rmDragId = null; rmDragCol = null;
+}
+
+// ── Mantra persistence ───────────────────────────────────────────────────────
+const mantraInput = document.getElementById('mantraInput');
+mantraInput.value = localStorage.getItem('bmh_mantra') || '';
+mantraInput.addEventListener('input', () => {
+  localStorage.setItem('bmh_mantra', mantraInput.value);
+});
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+async function init() {
+  await loadFromCloud();
+  const isEmpty = Object.keys(DB.routine).length === 0 && Object.keys(DB.workout).length === 0;
+  if (isEmpty) {
+    const WORKOUT_DAYS = ['2026-01-05','2026-01-08','2026-01-22','2026-01-23','2026-01-25'];
+    const ABOVE_DAYS   = ['2026-01-11'];
+    const HALF_DAYS    = [
+      '2026-01-01','2026-01-02','2026-01-03','2026-01-04',
+      '2026-01-05','2026-01-06','2026-01-07','2026-01-08','2026-01-09','2026-01-10',
+      '2026-01-11','2026-01-12','2026-01-13','2026-01-14','2026-01-15',
+      '2026-01-16','2026-01-17','2026-01-18','2026-01-19',
+      '2026-01-20','2026-01-21','2026-01-22','2026-01-23','2026-01-24','2026-01-25','2026-01-26',
+      '2026-01-27','2026-01-28','2026-01-29','2026-01-30','2026-01-31',
+      '2026-02-01','2026-02-02','2026-02-03','2026-02-04','2026-02-05','2026-02-06','2026-02-07',
+      '2026-02-08','2026-02-09','2026-02-10','2026-02-11','2026-02-12','2026-02-13','2026-02-14',
+      '2026-02-15','2026-02-16','2026-02-17','2026-02-18','2026-02-19','2026-02-20','2026-02-21',
+      '2026-02-22','2026-02-23','2026-02-24','2026-02-25','2026-02-26','2026-02-27','2026-02-28',
+      '2026-03-01','2026-03-02','2026-03-03','2026-03-04','2026-03-05','2026-03-06','2026-03-07',
+      '2026-03-08'
+    ];
+    WORKOUT_DAYS.forEach(d => { DB.workout[d] = 1; });
+    ABOVE_DAYS.forEach(d   => { DB.above[d]   = 1; });
+    HALF_DAYS.forEach(d    => { DB.routine[d]  = [0,1]; });
+    saveToCloud();
+  }
+  loadRoutineUI();
+  updateCalendar();
+  renderRoadmap();
+}
+init();
+
+</script>
+
+
+</body>
+</html>

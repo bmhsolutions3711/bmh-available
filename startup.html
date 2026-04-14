@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BMH Solutions — Startup Planning</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#111111;color:#e5e7eb;min-height:100vh}
+
+    /* Nav bar */
+    .nav-bar{background:#0a0a0a;padding:0 32px;display:flex;align-items:center;gap:0;border-bottom:1px solid rgba(255,255,255,.08);overflow-x:auto;-webkit-overflow-scrolling:touch}
+    .nav-bar::-webkit-scrollbar{display:none}
+    .nav-logo{height:32px;margin-right:24px;flex-shrink:0}
+    .nav-link{padding:14px 18px;font-size:11px;font-weight:500;text-decoration:none;color:rgba(255,255,255,.45);letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;transition:color .2s;position:relative}
+    .nav-link:hover{color:rgba(255,255,255,.85)}
+    .nav-link.active{color:#ffffff}
+    .nav-link.active::after{content:'';position:absolute;bottom:0;left:18px;right:18px;height:2px;background:#ffffff}
+
+    .container{max-width:1400px;margin:0 auto;padding:24px 32px}
+    .card{background:#1a1a1a;border-radius:12px;padding:24px;border:1px solid rgba(255,255,255,.06);margin-bottom:24px}
+    .card h2{font-size:14px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+    /* KPI row */
+    .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+    @media(max-width:800px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+    .kpi{background:#1a1a1a;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,.06);text-align:center}
+    .kpi-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.4);margin-bottom:6px}
+    .kpi-val{font-size:28px;font-weight:800;color:#e5b524}
+    .kpi-sub{font-size:12px;color:rgba(255,255,255,.4);margin-top:4px}
+    .kpi-val.green{color:#22c55e}
+    .kpi-val.red{color:#dc2626}
+    .kpi-val.amber{color:#d97706}
+
+    /* Cost table */
+    .cost-table{width:100%;border-collapse:collapse}
+    .cost-table th{text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.6);padding:10px 12px;background:rgba(255,255,255,.05);border-bottom:2px solid rgba(255,255,255,.08)}
+    .cost-table td{padding:12px;font-size:14px;color:rgba(255,255,255,.75);border-bottom:1px solid rgba(255,255,255,.04)}
+    .cost-table tr:hover{background:rgba(255,255,255,.03)}
+    .cost-table tr:last-child td{border-bottom:none}
+    .cost-table .amount{text-align:right;font-weight:700;font-family:'SF Mono',monospace;font-size:14px}
+    .cost-table .total-row td{border-top:2px solid #e5b524;font-weight:800;font-size:15px;color:#e5b524}
+    .cost-table .category{font-weight:600;color:#e5b524;background:rgba(255,255,255,.03)}
+    .cost-table .status{font-size:11px;padding:3px 8px;border-radius:99px;font-weight:600}
+    .status-pending{background:rgba(234,179,8,.15);color:#fbbf24}
+    .status-done{background:rgba(34,197,94,.15);color:#22c55e}
+    .status-planned{background:rgba(99,102,241,.15);color:#818cf8}
+
+    /* Timeline */
+    .timeline{position:relative;padding-left:24px}
+    .timeline::before{content:'';position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:rgba(255,255,255,.08)}
+    .tl-item{position:relative;margin-bottom:20px;padding-left:20px}
+    .tl-item::before{content:'';position:absolute;left:-20px;top:6px;width:12px;height:12px;border-radius:50%;background:#e5b524;border:2px solid #111111;box-shadow:0 0 0 2px #e5b524}
+    .tl-item.done::before{background:#22c55e;box-shadow:0 0 0 2px #22c55e}
+    .tl-item.active::before{background:#d97706;box-shadow:0 0 0 2px #d97706;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{box-shadow:0 0 0 2px #d97706}50%{box-shadow:0 0 0 4px rgba(217,119,6,.3)}}
+    .tl-title{font-size:14px;font-weight:700;color:rgba(255,255,255,.85)}
+    .tl-date{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
+    .tl-desc{font-size:13px;color:rgba(255,255,255,.5);margin-top:4px}
+
+    /* Notes */
+    .note-box{background:rgba(234,179,8,.08);border-left:4px solid #e5b524;border-radius:0 8px 8px 0;padding:14px 18px;margin-top:16px;font-size:13px;color:rgba(255,255,255,.7);line-height:1.6}
+
+    /* Two column layout */
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+    @media(max-width:900px){.two-col{grid-template-columns:1fr}}
+
+    .footer{text-align:center;padding:24px;font-size:11px;color:rgba(255,255,255,.3);margin-top:32px}
+  </style>
+</head>
+<body>
+
+<nav class="nav-bar">
+  <img src="bmh-logo.jpg" alt="BMH Solutions" class="nav-logo">
+  <a href="dashboard.html" class="nav-link">Dashboard</a>
+  <a href="planning.html" class="nav-link">Planning</a>
+  <a href="briefing.html" class="nav-link">Briefing</a>
+  <a href="operations.html" class="nav-link">Operations</a>
+  <a href="https://bmhsolutions3711.github.io/bmh-available/" target="_blank" class="nav-link">Available</a>
+  <a href="startup.html" class="nav-link active">Startup</a>
+  <a href="organization.html" class="nav-link">Tasks</a>
+</nav>
+
+<div class="container">
+
+  <!-- KPI Summary -->
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-label">Total Startup Budget</div>
+      <div class="kpi-val">$632</div>
+      <div class="kpi-sub">one-time costs</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Monthly Recurring</div>
+      <div class="kpi-val">$6</div>
+      <div class="kpi-sub">ongoing costs</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Spent to Date</div>
+      <div class="kpi-val green">$32</div>
+      <div class="kpi-sub">domain + flyers</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Remaining</div>
+      <div class="kpi-val amber">$600</div>
+      <div class="kpi-sub">before launch-ready</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <!-- Left: Startup Costs -->
+    <div>
+      <div class="card">
+        <h2>&#128176; Startup Costs — LoadCalc SaaS</h2>
+        <table class="cost-table">
+          <thead>
+            <tr><th>Item</th><th>Cost</th><th>Type</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <tr class="category"><td colspan="4">Legal &amp; Compliance</td></tr>
+            <tr>
+              <td>Attorney review (Terms/Privacy)</td>
+              <td class="amount">$300–500</td>
+              <td>One-time</td>
+              <td><span class="status status-planned">Planned</span></td>
+            </tr>
+            <tr>
+              <td>LLC already established</td>
+              <td class="amount">$0</td>
+              <td>—</td>
+              <td><span class="status status-done">Done</span></td>
+            </tr>
+
+            <tr class="category"><td colspan="4">Infrastructure</td></tr>
+            <tr>
+              <td>Domain (theaitrucker.io)</td>
+              <td class="amount">$12/yr</td>
+              <td>Annual</td>
+              <td><span class="status status-done">Done</span></td>
+            </tr>
+            <tr>
+              <td>Hosting (GitHub Pages)</td>
+              <td class="amount">$0</td>
+              <td>—</td>
+              <td><span class="status status-done">Done</span></td>
+            </tr>
+            <tr>
+              <td>Backend (Google Apps Script)</td>
+              <td class="amount">$0</td>
+              <td>—</td>
+              <td><span class="status status-done">Done</span></td>
+            </tr>
+            <tr>
+              <td>Analytics (Google Sheets)</td>
+              <td class="amount">$0</td>
+              <td>—</td>
+              <td><span class="status status-done">Done</span></td>
+            </tr>
+            <tr>
+              <td>SSL certificate (Cloudflare)</td>
+              <td class="amount">$0</td>
+              <td>—</td>
+              <td><span class="status status-done">Done</span></td>
+            </tr>
+
+            <tr class="category"><td colspan="4">Payments</td></tr>
+            <tr>
+              <td>Stripe account</td>
+              <td class="amount">$0</td>
+              <td>—</td>
+              <td><span class="status status-done">Done</span></td>
+            </tr>
+            <tr>
+              <td>Stripe processing fees</td>
+              <td class="amount">2.9% + $0.30</td>
+              <td>Per txn</td>
+              <td><span class="status status-done">Active</span></td>
+            </tr>
+
+            <tr class="category"><td colspan="4">Marketing</td></tr>
+            <tr>
+              <td>Truck stop flyers (printing)</td>
+              <td class="amount">$20</td>
+              <td>One-time</td>
+              <td><span class="status status-done">Done</span></td>
+            </tr>
+            <tr>
+              <td>Business email (Google Workspace)</td>
+              <td class="amount">$6/mo</td>
+              <td>Monthly</td>
+              <td><span class="status status-planned">Planned</span></td>
+            </tr>
+
+            <tr class="category"><td colspan="4">Tools &amp; Services</td></tr>
+            <tr>
+              <td>Weather API (OpenWeatherMap)</td>
+              <td class="amount">$0</td>
+              <td>Free tier</td>
+              <td><span class="status status-done">Done</span></td>
+            </tr>
+            <tr>
+              <td>Routing API (OSRM)</td>
+              <td class="amount">$0</td>
+              <td>Free</td>
+              <td><span class="status status-done">Done</span></td>
+            </tr>
+            <tr>
+              <td>Claude Code (AI development)</td>
+              <td class="amount">$100/mo</td>
+              <td>Monthly</td>
+              <td><span class="status status-pending">Evaluate</span></td>
+            </tr>
+
+            <tr class="total-row">
+              <td>Estimated Total to Launch</td>
+              <td class="amount">~$632</td>
+              <td colspan="2">+ ~$6/mo recurring</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="note-box">
+          &#128161; <strong>Lesson learned:</strong> Budget for legal upfront. Skipping it with the trucking business was a mistake. $300-500 now saves $10,000+ later.
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Timeline + Revenue -->
+    <div>
+      <div class="card">
+        <h2>&#128640; Launch Roadmap</h2>
+        <div class="timeline">
+          <div class="tl-item done">
+            <div class="tl-title">Core Product Built</div>
+            <div class="tl-date">March 2026</div>
+            <div class="tl-desc">LoadCalc with voice input, weather, route maps, analytics</div>
+          </div>
+          <div class="tl-item done">
+            <div class="tl-title">Payment Integration</div>
+            <div class="tl-date">March 2026</div>
+            <div class="tl-desc">Stripe monthly ($2.99) + lifetime ($19.99) plans</div>
+          </div>
+          <div class="tl-item done">
+            <div class="tl-title">Marketing Materials</div>
+            <div class="tl-date">March 2026</div>
+            <div class="tl-desc">Truck stop flyers with QR codes, tear-offs</div>
+          </div>
+          <div class="tl-item active">
+            <div class="tl-title">Legal Review</div>
+            <div class="tl-date">Target: April 2026</div>
+            <div class="tl-desc">Attorney review of Terms, Privacy Policy, disclaimers</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-title">Truck Stop Distribution</div>
+            <div class="tl-date">Target: April 2026</div>
+            <div class="tl-desc">Hang flyers at truck stops along regular routes</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-title">First 100 Users</div>
+            <div class="tl-date">Target: Q2 2026</div>
+            <div class="tl-desc">Organic growth from truck stops + word of mouth</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-title">AI Consulting — First Client</div>
+            <div class="tl-date">Target: Q3 2026</div>
+            <div class="tl-desc">Custom business automation build for a small business</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>&#128200; Break-Even Analysis</h2>
+        <table class="cost-table">
+          <thead>
+            <tr><th>Scenario</th><th>Users</th><th>Monthly Rev</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Cover monthly costs ($6/mo)</td>
+              <td class="amount">3 monthly</td>
+              <td class="amount">$8.97</td>
+            </tr>
+            <tr>
+              <td>Cover startup + monthly</td>
+              <td class="amount">32 lifetime</td>
+              <td class="amount">$639.68</td>
+            </tr>
+            <tr>
+              <td>$500/mo revenue target</td>
+              <td class="amount">168 monthly<br><span style="font-size:11px;color:#9ca3af">or 25 lifetime</span></td>
+              <td class="amount">$500</td>
+            </tr>
+            <tr>
+              <td>$1,000/mo revenue target</td>
+              <td class="amount">335 monthly<br><span style="font-size:11px;color:#9ca3af">or 50 lifetime</span></td>
+              <td class="amount">$1,000</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="note-box">
+          &#128161; <strong>The real play:</strong> LoadCalc proves the model. AI consulting for small businesses at $2,000-5,000 per build is where the serious revenue lives. One client = months of SaaS revenue.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">&copy; 2026 BMH Solutions LLC &middot; Startup Planning</div>
+
+</body>
+</html>

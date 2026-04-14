@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BMH Solutions — Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛣️</text></svg>">
+  
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+  <style>
+    /* === SHARED RESET & THEME === */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #090909;
+      color: #e5e7eb;
+      min-height: 100vh;
+    }
+
+    /* === NAV BAR (single source of truth) === */
+    .nav-bar { background: #0a0a0a; padding: 0 32px; display: flex; align-items: center; gap: 0; border-bottom: 1px solid rgba(255,255,255,.08); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .nav-bar::-webkit-scrollbar { display: none; }
+    .nav-logo { height: 32px; margin-right: 24px; flex-shrink: 0; }
+    .nav-link { padding: 14px 18px; font-size: 11px; font-weight: 500; text-decoration: none; color: rgba(255,255,255,.45); letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap; transition: color .2s; position: relative; }
+    .nav-link:hover { color: rgba(255,255,255,.85); }
+    .nav-link.active { color: #ffffff; }
+    .nav-link.active::after { content: ''; position: absolute; bottom: 0; left: 18px; right: 18px; height: 2px; background: #ffffff; }
+
+    /* === PAGE-SPECIFIC STYLES === */
+    
+    /* ── Dark-theme tokens (must match finances.html) ── */
+    :root {
+      --bg:#090909; --surface:#1a1a1a; --surface2:#222222;
+      --border:#1f1f1f; --border2:#2a2a2a;
+      --yellow:#FFD600; --green:#00E676; --red:#FF4444;
+      --white:#F5F5F7; --mid:#86868b; --dim:#3d3d3f;
+      --r:10px;
+    }
+
+    .header {
+      background: #1a1a1a;
+      color: white;
+      padding: 20px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .header h1 { font-size: 20px; font-weight: 700; }
+    .header p  { font-size: 12px; color: rgba(255,255,255,.5); margin-top: 3px; }
+    .header .updated { font-size: 11px; color: rgba(255,255,255,.4); text-align: right; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px 20px; }
+
+    /* KPI Cards — DARK THEME (never use background:white) */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .kpi {
+      background: var(--surface) !important;
+      border-radius: var(--r);
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--yellow);
+    }
+    .kpi .label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--mid);
+      margin-bottom: 8px;
+    }
+    .kpi .value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1;
+    }
+    .kpi .sub {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--mid);
+      margin-top: 6px;
+    }
+
+    /* Charts */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 768px) {
+      .chart-grid { grid-template-columns: 1fr; }
+    }
+    /* Cards — DARK THEME (never use background:white) */
+    .card {
+      background: var(--surface) !important;
+      border-radius: var(--r);
+      padding: 20px;
+      border: 1px solid var(--border);
+    }
+    .card h2 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--mid);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+    }
+    .chart-wrap { position: relative; height: 240px; }
+
+    /* Table — dark theme */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th {
+      background: rgba(255,214,0,.12);
+      color: var(--yellow);
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--white);
+    }
+    tr:hover td { background: var(--surface2); }
+    tr:last-child td { border-bottom: none; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .badge-open { background: rgba(255,214,0,.15); color: var(--yellow); }
+
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: rgba(255,255,255,.3);
+      padding: 20px;
+    }
+    /* Analytics range buttons */
+    .range-btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,.5);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .range-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+    .range-btn.active { background: var(--yellow); color: #000; border-color: var(--yellow); }
+
+  </style>
+</head>
+<body>
+
+<!-- Nav Bar -->
+<nav class="nav-bar">
+  <img src="bmh-logo.jpg" alt="BMH Solutions" class="nav-logo">
+  <a href="dashboard.html" class="nav-link active">Dashboard</a>
+  <a href="planning.html" class="nav-link ">Planning</a>
+  <a href="briefing.html" class="nav-link ">Briefing</a>
+  <a href="operations.html" class="nav-link ">Operations</a>
+  <a href="https://bmhsolutions3711.github.io/bmh-available/" target="_blank" class="nav-link ">Available</a>
+  <a href="startup.html" class="nav-link ">Startup</a>
+  <a href="organization.html" class="nav-link ">Tasks</a>
+</nav>
+
+
+<div class="header">
+  <div>
+    <h1>BMH Solutions LLC — Business Dashboard</h1>
+    <p>MC: 1700226 &nbsp;&middot;&nbsp; DOT: 04349026 &nbsp;&middot;&nbsp; Hotshot Trucking</p>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+    <div class="updated">Last updated<br>04/07/2026 02:43 PM</div>
+    <a href="operations.html?sync=1" style="background:var(--yellow);color:#000;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;text-decoration:none">&#128260; Sync Dashboard</a>
+  </div>
+</div>
+
+
+
+<div class="container">
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="label">YTD Revenue</div>
+      <div class="value" id="kpi-ytd-rev" style="color:var(--green)">—</div>
+      <div class="sub" id="kpi-mtd-rev" style="font-size:14px;font-weight:600;color:var(--white)">— month to date</div>
+    </div>
+    <div class="kpi">
+      <div class="label">YTD Expenses</div>
+      <div class="value" style="color:#dc2626">—</div>
+      <div class="sub" style="font-size:14px;font-weight:600;color:#dc2626">— month to date</div>
+    </div>
+    <div class="kpi">
+      <div class="label">YTD Net Profit</div>
+      <div class="value" style="color:#dc2626">—</div>
+      <div class="sub">revenue minus expenses</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Open Invoices</div>
+      <div class="value" style="color:var(--white);font-size:28px">— / —</div>
+      <div class="sub">unpaid invoices</div>
+    </div>
+
+  </div>
+
+  <!-- Monthly Target Tracker -->
+  <div class="card" style="margin-bottom:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <h2 style="font-size:16px;font-weight:700;color:var(--white);margin-bottom:2px">&#128200; Monthly Revenue Target</h2>
+        <div style="font-size:13px;color:var(--mid)">Weekly goal &middot; Monthly target &middot; Fixed overhead</div>
+      </div>
+      <div style="text-align:right">
+        <div id="target-earned" style="font-size:22px;font-weight:800;color:#dc2626">—</div>
+        <div style="font-size:12px;color:#6b7280">this month so far</div>
+      </div>
+    </div>
+    <div style="background:var(--surface2);border-radius:8px;height:16px;overflow:hidden;margin-bottom:12px">
+      <div id="target-bar" style="height:100%;width:0%;background:#dc2626;border-radius:8px;transition:width .5s"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mid);margin-bottom:4px">Monthly Target</div>
+        <div style="font-size:18px;font-weight:800;color:var(--yellow)">—</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
+        <div id="target-pace-label" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mid);margin-bottom:4px">Pace</div>
+        <div id="target-pace" style="font-size:18px;font-weight:800;color:#dc2626">—</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mid);margin-bottom:4px">Fixed Overhead</div>
+        <div style="font-size:18px;font-weight:800;color:#dc2626">—</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mid);margin-bottom:4px">Days Left</div>
+        <div id="target-days" style="font-size:18px;font-weight:800;color:var(--white)">23</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Open Invoices Table -->
+  <div class="card" style="margin-bottom:24px">
+    <h2>Open Invoices <span class="badge badge-open">— pending</span><span style="float:right;font-size:16px;font-weight:700;color:var(--yellow)">— outstanding</span></h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Load #</th>
+            <th>Broker</th>
+            <th>Route</th>
+            <th>Pickup</th>
+            <th>Delivery</th>
+            <th>Rate</th>
+            <th>Folder</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Invoice data removed for security — load from protected API -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  
+  <!-- Truck Maintenance -->
+  <div class="card" style="margin-bottom:24px">
+    <h2>&#128663; F250 — Maintenance
+      <span style="float:right;font-size:12px;font-weight:400;color:#6b7280">Odometer: <strong style="color:#FFD600">74,019 mi</strong> &nbsp;·&nbsp; as of 2026-04-07</span>
+    </h2>
+    
+        <div style='margin-bottom:14px'>
+          <div style='display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px'>
+            <span style='font-size:13px;font-weight:600;color:#374151'>Oil Change</span>
+            <span style='color:#16a34a'>7,981 mi left</span>
+          </div>
+          <div style='background:#e5e7eb;border-radius:99px;height:10px;overflow:hidden'>
+            <div style='height:10px;border-radius:99px;width:20%;background:#16a34a;transition:width 0.3s'></div>
+          </div>
+          <div style='font-size:11px;color:#9ca3af;margin-top:2px'>Last service: 72,000 mi — every 10,000 mi</div>
+        </div>
+        <div style='margin-bottom:14px'>
+          <div style='display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px'>
+            <span style='font-size:13px;font-weight:600;color:#374151'>Tire Rotation</span>
+            <span style='color:#dc2626;font-weight:700'>OVERDUE</span>
+          </div>
+          <div style='background:#e5e7eb;border-radius:99px;height:10px;overflow:hidden'>
+            <div style='height:10px;border-radius:99px;width:100%;background:#dc2626;transition:width 0.3s'></div>
+          </div>
+          <div style='font-size:11px;color:#9ca3af;margin-top:2px'>Last service: 62,000 mi — every 10,000 mi</div>
+        </div>
+        <div style='margin-bottom:14px'>
+          <div style='display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px'>
+            <span style='font-size:13px;font-weight:600;color:#374151'>Air Filter</span>
+            <span style='color:#f59e0b;font-weight:600'>5,981 mi left</span>
+          </div>
+          <div style='background:#e5e7eb;border-radius:99px;height:10px;overflow:hidden'>
+            <div style='height:10px;border-radius:99px;width:80%;background:#f59e0b;transition:width 0.3s'></div>
+          </div>
+          <div style='font-size:11px;color:#9ca3af;margin-top:2px'>Last service: 50,000 mi — every 30,000 mi</div>
+        </div>
+    <div style="font-size:11px;color:#9ca3af;margin-top:8px;border-top:1px solid #f3f4f6;padding-top:8px">
+      Update <code>maintenance.json</code> with the current odometer reading after each service.
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="chart-grid">
+    <div class="card">
+      <h2>Revenue by Month (2026)</h2>
+      <div class="chart-wrap">
+        <canvas id="revenueChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Top Brokers by Revenue</h2>
+      <div class="chart-wrap">
+        <canvas id="brokerChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Expense Transactions by Category -->
+  <h2 style="font-size:13px;font-weight:600;color:var(--mid);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:16px">Recent Expenses</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:24px">
+
+    <div class="card">
+      <h2>&#9981; Gas — Last 10 <span style="float:right;font-size:12px;font-weight:700;color:#dc2626">—</span></h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Payee</th><th>Amount</th></tr></thead>
+          <tbody><!-- Transaction data removed for security --></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>&#127968; Lodging — Last 10 <span style="float:right;font-size:12px;font-weight:700;color:#dc2626">—</span></h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Payee</th><th>Amount</th></tr></thead>
+          <tbody><!-- Transaction data removed for security --></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>&#127860; Food — Last 10 <span style="float:right;font-size:12px;font-weight:700;color:#dc2626">—</span></h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Payee</th><th>Amount</th></tr></thead>
+          <tbody><!-- Transaction data removed for security --></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Other Category Dropdown -->
+  <div class="card" style="margin-bottom:24px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <h2 style="margin:0">View Category</h2>
+      <select id="cat-selector" onchange="showCat(this.value)" style="font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--white);cursor:pointer;min-width:220px">
+        <option value="">Select a category...</option>
+        <!-- Category options with YTD totals removed for security — populate from protected API -->
+      </select>
+    </div>
+    <div id="cat-detail" style="margin-top:16px;display:none">
+      <div class="table-wrap">
+        <table id="cat-table">
+          <thead><tr><th>Date</th><th>Description</th><th style="text-align:right">Amount</th></tr></thead>
+          <tbody id="cat-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- P&L Chart + Expense Breakdown -->
+  <div class="chart-grid" style="margin-bottom:24px">
+    <div class="card">
+      <h2>Revenue vs Expenses vs Net (2026)</h2>
+      <div class="chart-wrap">
+        <canvas id="plChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Top Expense Categories</h2>
+      <div class="chart-wrap">
+        <canvas id="expenseChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gas / Lodging / Food by Month Chart -->
+  <div class="card" style="margin-bottom:24px">
+    <h2>&#9981; Key Expense Categories by Month (2026)</h2>
+    <div class="chart-wrap">
+      <canvas id="expCatMonthChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Load Count Chart -->
+  <div class="card" style="margin-bottom:24px">
+    <h2>Load Count by Month (2026)</h2>
+    <div class="chart-wrap">
+      <canvas id="loadChart"></canvas>
+    </div>
+  </div>
+
+  <!-- LoadCalc Analytics -->
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px">
+    <h2 style="font-size:18px; font-weight:700; color:var(--white); margin:0">LoadCalc Analytics</h2>
+    <div id="analyticsRange" style="display:flex; gap:6px">
+      <button onclick="loadAnalytics('7d')" class="range-btn active" data-range="7d">7 Days</button>
+      <button onclick="loadAnalytics('30d')" class="range-btn" data-range="30d">30 Days</button>
+      <button onclick="loadAnalytics('all')" class="range-btn" data-range="all">All Time</button>
+    </div>
+  </div>
+  <div class="kpi-grid" id="analyticsKpis" style="grid-template-columns:repeat(5, 1fr)">
+    <div class="kpi" style="border-left-color:#7c3aed">
+      <div class="label">Registered Users</div>
+      <div class="value" id="a-users">&mdash;</div>
+      <div class="sub" id="a-sessions">&mdash; registered</div>
+    </div>
+    <div class="kpi" style="border-left-color:var(--yellow)">
+      <div class="label">Page Views</div>
+      <div class="value" id="a-pageviews">&mdash;</div>
+      <div class="sub" id="a-views-per-user">&mdash; per user</div>
+    </div>
+    <div class="kpi" style="border-left-color:#16a34a">
+      <div class="label">Calculations</div>
+      <div class="value" id="a-calcs">&mdash;</div>
+      <div class="sub" id="a-voice">&mdash; voice inputs</div>
+    </div>
+    <div class="kpi" style="border-left-color:#f59e0b">
+      <div class="label">Paywall Views</div>
+      <div class="value" id="a-paywall">&mdash;</div>
+      <div class="sub" id="a-cta">&mdash; CTA clicks</div>
+    </div>
+    <div class="kpi" style="border-left-color:#dc2626">
+      <div class="label">Payment Clicks</div>
+      <div class="value" id="a-payments">&mdash;</div>
+      <div class="sub" id="a-success">&mdash; confirmed</div>
+    </div>
+  </div>
+  <div style="display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:24px">
+    <div class="card"><h2>Daily Traffic &amp; Calculations</h2><div class="chart-wrap"><canvas id="analyticsDaily"></canvas></div></div>
+    <div class="card"><h2>Conversion Funnel</h2><div class="chart-wrap"><canvas id="analyticsFunnel"></canvas></div></div>
+  </div>
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px">
+    <div class="card"><h2>Events Breakdown</h2><div class="chart-wrap"><canvas id="analyticsEvents"></canvas></div></div>
+    <div class="card"><h2>Page Breakdown</h2><div class="chart-wrap"><canvas id="analyticsPages"></canvas></div></div>
+  </div>
+  <div id="analyticsStatus" style="text-align:center; color:#9ca3af; font-size:12px; margin-bottom:16px"></div>
+
+</div>
+
+<div class="footer">
+  BMH Solutions LLC
+</div>
+
+
+
+<script>
+// ═══════════════════════════════════════════════════
+// DATA BRIDGE
+// SECURITY: All financial data has been removed from this public file.
+// Transaction and financial data should be loaded from a protected API
+// endpoint with authentication. Never hardcode sensitive data in HTML
+// served from a public repository.
+// ═══════════════════════════════════════════════════
+const NAVY = '#FFD600';
+const LIGHT = '#332b00';
+const GOLD = '#f59e0b';
+const BROKER_LABELS = [];
+const BROKER_DATA = [];
+const REV_LABELS = [];
+const REV_DATA = [];
+const LOAD_DATA = [];
+const ALL_MONTHS = [];
+const NET_DATA = [];
+const REV_ALL = [];
+const EXP_ALL = [];
+const EXP_CAT_LABELS = [];
+const EXP_CAT_DATA = [];
+const ALL_TXNS = {}; // SCRUBBED — load from protected API
+const GAS_MONTH = [];
+const LODGING_MONTH = [];
+const FOOD_MONTH = [];
+// SECURITY: Apps Script URL removed from public repo. Load from .env or server-side config.
+const APPS_SCRIPT_URL = '';
+const MONTHLY_TARGET = 0;
+const MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const INIT_REV_LABELS = [];
+const INIT_REV_DATA = [];
+
+
+// ── XSS helper ──
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ═══════════════════════════════════════════════════
+// Top Brokers Chart
+// ═══════════════════════════════════════════════════
+new Chart(document.getElementById('brokerChart'), {
+  type: 'bar',
+  data: {
+    labels: BROKER_LABELS,
+    datasets: [{
+      label: 'Revenue ($)',
+      data: BROKER_DATA,
+      backgroundColor: [NAVY, '#e6c200', '#ccad00', '#b39700', '#997f00'],
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        ticks: {
+          callback: v => '$' + v.toLocaleString(),
+          font: { size: 10 }
+        },
+        grid: { color: 'rgba(255,255,255,.06)' }
+      },
+      y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+// ═══════════════════════════════════════════════════
+// Load Count Chart
+// ═══════════════════════════════════════════════════
+new Chart(document.getElementById('loadChart'), {
+  type: 'line',
+  data: {
+    labels: REV_LABELS,
+    datasets: [{
+      label: 'Loads',
+      data: LOAD_DATA,
+      borderColor: NAVY,
+      backgroundColor: LIGHT,
+      fill: true,
+      tension: 0.4,
+      pointBackgroundColor: NAVY,
+      pointRadius: 5,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: {
+        min: 0,
+        ticks: { stepSize: 1, font: { size: 11 } },
+        grid: { color: 'rgba(255,255,255,.06)' }
+      },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// ═══════════════════════════════════════════════════
+// Key Expense Categories by Month
+// ═══════════════════════════════════════════════════
+new Chart(document.getElementById('expCatMonthChart'), {
+  type: 'bar',
+  data: {
+    labels: REV_LABELS,
+    datasets: [
+      {
+        label: 'Gas',
+        data: GAS_MONTH,
+        backgroundColor: '#ef4444',
+        borderRadius: 4,
+      },
+      {
+        label: 'Lodging',
+        data: LODGING_MONTH,
+        backgroundColor: '#f59e0b',
+        borderRadius: 4,
+      },
+      {
+        label: 'Food',
+        data: FOOD_MONTH,
+        backgroundColor: '#10b981',
+        borderRadius: 4,
+      },
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top', labels: { font: { size: 11 } } },
+      tooltip: {
+        callbacks: {
+          label: ctx => ctx.dataset.label + ': $' + ctx.parsed.y.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0})
+        }
+      }
+    },
+    scales: {
+      y: {
+        ticks: { callback: v => '$' + v.toLocaleString(), font: { size: 11 } },
+        grid: { color: 'rgba(255,255,255,.06)' }
+      },
+      x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// ═══════════════════════════════════════════════════
+// P&L by Month
+// ═══════════════════════════════════════════════════
+new Chart(document.getElementById('plChart'), {
+  type: 'bar',
+  data: {
+    labels: ALL_MONTHS,
+    datasets: [
+      {
+        label: 'Revenue',
+        data: REV_ALL,
+        backgroundColor: NAVY,
+        borderRadius: 4,
+      },
+      {
+        label: 'Expenses',
+        data: EXP_ALL,
+        backgroundColor: '#ef4444',
+        borderRadius: 4,
+      },
+      {
+        label: 'Net Profit',
+        data: NET_DATA,
+        backgroundColor: '#16a34a',
+        borderRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { labels: { font: { size: 10 } } } },
+    scales: {
+      y: {
+        ticks: { callback: v => '$' + v.toLocaleString(), font: { size: 10 } },
+        grid: { color: 'rgba(255,255,255,.06)' }
+      },
+      x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+// ═══════════════════════════════════════════════════
+// Expense Breakdown Chart
+// ═══════════════════════════════════════════════════
+new Chart(document.getElementById('expenseChart'), {
+  type: 'bar',
+  data: {
+    labels: EXP_CAT_LABELS,
+    datasets: [{
+      label: 'Amount ($)',
+      data: EXP_CAT_DATA,
+      backgroundColor: ['#ef4444','#f97316','#f59e0b','#84cc16','#06b6d4','#8b5cf6'],
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        ticks: { callback: v => '$' + v.toLocaleString(), font: { size: 10 } },
+        grid: { color: 'rgba(255,255,255,.06)' }
+      },
+      y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+    }
+  }
+});
+
+// ═══════════════════════════════════════════════════
+// Category Detail (showCat)
+// ═══════════════════════════════════════════════════
+function showCat(cat) {
+  const detail = document.getElementById('cat-detail');
+  const tbody  = document.getElementById('cat-tbody');
+  if (!cat) { detail.style.display='none'; return; }
+  const txns = ALL_TXNS[cat] || [];
+  if (!txns.length) { tbody.innerHTML='<tr><td colspan="3" style="text-align:center;color:#9ca3af;padding:12px">No transactions found</td></tr>'; }
+  else {
+    tbody.innerHTML = txns.map(t =>
+      '<tr><td style="color:var(--mid)">'+esc(t.date)+'</td><td>'+esc(t.desc)+'</td><td style="text-align:right;color:#dc2626">-$'+esc(t.amt.toFixed(2))+'</td></tr>'
+    ).join('');
+  }
+  detail.style.display = 'block';
+}
+
+// ═══════════════════════════════════════════════════
+// Live Revenue from Google Sheets
+// ═══════════════════════════════════════════════════
+let revenueChart2 = new Chart(document.getElementById('revenueChart'), {
+  type: 'bar',
+  data: { labels: INIT_REV_LABELS, datasets: [{ label: 'Revenue ($)', data: INIT_REV_DATA, backgroundColor: NAVY, borderRadius: 6 }] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { ticks: { callback: v => '$' + v.toLocaleString(), font: { size: 11 } }, grid: { color: 'rgba(255,255,255,.06)' } }, x: { grid: { display: false }, ticks: { font: { size: 11 } } } } }
+});
+
+(async function loadRevenue() {
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL + '?action=revenue');
+    const d = await resp.json();
+    if (d.status === 'error') throw new Error(d.message);
+    const rev = d.monthlyRevenue;
+    const ytd = d.ytdRevenue;
+    const now = new Date();
+    const currentMonthIdx = now.getMonth();
+    const currentRevenue = rev[currentMonthIdx] || 0;
+    const el = id => document.getElementById(id);
+    el('kpi-ytd-rev').textContent = '$' + Math.round(ytd).toLocaleString();
+    el('kpi-mtd-rev').textContent = '$' + Math.round(currentRevenue).toLocaleString() + ' month to date';
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const dayOfMonth = now.getDate();
+    const daysLeft = daysInMonth - dayOfMonth;
+    const expectedPace = (MONTHLY_TARGET / daysInMonth) * dayOfMonth;
+    const diff = currentRevenue - expectedPace;
+    const pct = Math.min(100, (currentRevenue / MONTHLY_TARGET) * 100);
+    el('target-earned').textContent = '$' + Math.round(currentRevenue).toLocaleString();
+    el('target-earned').style.color = currentRevenue >= expectedPace ? '#16a34a' : '#dc2626';
+    el('target-bar').style.width = pct.toFixed(1) + '%';
+    el('target-days').textContent = daysLeft;
+    if (diff >= 0) {
+      el('target-pace-label').textContent = 'Ahead of Pace';
+      el('target-pace').textContent = '$' + Math.round(diff).toLocaleString();
+      el('target-pace').style.color = '#16a34a';
+    } else {
+      el('target-pace-label').textContent = 'Behind of Pace';
+      el('target-pace').textContent = '$' + Math.round(Math.abs(diff)).toLocaleString();
+      el('target-pace').style.color = '#dc2626';
+    }
+    const labels = [], values = [];
+    for (let i = 0; i <= currentMonthIdx; i++) { labels.push(MONTH_LABELS[i]); values.push(rev[i]); }
+    revenueChart2.data.labels = labels;
+    revenueChart2.data.datasets[0].data = values;
+    revenueChart2.update();
+  } catch(e) { console.warn('Revenue fetch failed:', e); }
+})();
+
+// ═══════════════════════════════════════════════════
+// LoadCalc Analytics
+// ═══════════════════════════════════════════════════
+const ANALYTICS_URL = APPS_SCRIPT_URL;
+let dailyChart = null, funnelChart = null, eventsChart = null, pagesChart = null;
+
+async function loadAnalytics(range) {
+  const status = document.getElementById('analyticsStatus');
+  if (!ANALYTICS_URL || ANALYTICS_URL.includes('URL_HERE')) {
+    status.textContent = 'Analytics not configured';
+    return;
+  }
+  document.querySelectorAll('.range-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.range === range);
+  });
+  status.textContent = 'Loading analytics...';
+  try {
+    const resp = await fetch(ANALYTICS_URL + '?range=' + range);
+    const d = await resp.json();
+    if (d.status === 'error') throw new Error(d.message);
+    const users = d.registeredUsers || 0;
+    const views = d.pageViews || 0;
+    document.getElementById('a-users').textContent = users.toLocaleString();
+    document.getElementById('a-sessions').textContent = users.toLocaleString() + ' registered';
+    document.getElementById('a-pageviews').textContent = views.toLocaleString();
+    document.getElementById('a-views-per-user').textContent = users ? (views/users).toFixed(1) + ' per user' : '\u2014';
+    document.getElementById('a-calcs').textContent = (d.calculations||0).toLocaleString();
+    document.getElementById('a-voice').textContent = (d.voiceStarts||0) + ' voice inputs';
+    document.getElementById('a-paywall').textContent = (d.paywallShown||0).toLocaleString();
+    document.getElementById('a-cta').textContent = (d.ctaClicks||0) + ' CTA clicks';
+    document.getElementById('a-payments').textContent = (d.paymentClicks||0).toLocaleString();
+    document.getElementById('a-success').textContent = (d.paymentSuccesses||0) + ' confirmed';
+    const daily = d.dailyCounts || [];
+    if (dailyChart) dailyChart.destroy();
+    dailyChart = new Chart(document.getElementById('analyticsDaily'), {
+      type:'line', data:{ labels:daily.map(x=>x.date.slice(5)), datasets:[
+        { label:'Views', data:daily.map(x=>x.views), borderColor:'#FFD600', backgroundColor:'rgba(255,214,0,.1)', fill:true, tension:.3 },
+        { label:'Calcs', data:daily.map(x=>x.calcs), borderColor:'#16a34a', backgroundColor:'rgba(22,163,74,.1)', fill:true, tension:.3 }
+      ]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } }, scales:{ y:{ beginAtZero:true } } }
+    });
+    const funnel = [d.pageViews||0, d.calculations||0, d.paywallShown||0, d.paymentClicks||0, d.paymentSuccesses||0];
+    if (funnelChart) funnelChart.destroy();
+    funnelChart = new Chart(document.getElementById('analyticsFunnel'), {
+      type:'bar', data:{ labels:['Views','Calcs','Paywall','Clicks','Paid'], datasets:[{ data:funnel, backgroundColor:['#FFD600','#16a34a','#f59e0b','#dc2626','#7c3aed'], borderRadius:4 }] },
+      options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{ legend:{ display:false } } }
+    });
+    const eb = d.eventBreakdown || {};
+    if (eventsChart) eventsChart.destroy();
+    eventsChart = new Chart(document.getElementById('analyticsEvents'), {
+      type:'doughnut', data:{ labels:Object.keys(eb), datasets:[{ data:Object.values(eb), backgroundColor:['#FFD600','#16a34a','#f59e0b','#dc2626','#7c3aed','#06b6d4','#ec4899','#84cc16','#f97316','#6366f1'] }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ font:{ size:10 } } } } }
+    });
+    const pb = d.pageBreakdown || {};
+    if (pagesChart) pagesChart.destroy();
+    pagesChart = new Chart(document.getElementById('analyticsPages'), {
+      type:'pie', data:{ labels:Object.keys(pb), datasets:[{ data:Object.values(pb), backgroundColor:['#FFD600','#16a34a','#f59e0b','#dc2626'] }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right', labels:{ font:{ size:10 } } } } }
+    });
+    status.textContent = 'Updated ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    status.textContent = 'Failed to load analytics: ' + e.message;
+  }
+}
+loadAnalytics('7d');
+
+</script>
+
+
+</body>
+</html>
