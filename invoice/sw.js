@@ -1,4 +1,4 @@
-const CACHE = 'invoice-runner-v1';
+const CACHE = 'invoice-runner-v2';
 const SHELL = ['./index.html'];
 
 self.addEventListener('install', e => {

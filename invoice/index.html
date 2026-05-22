@@ -52,6 +52,16 @@ h1{font-size:1.2rem;font-weight:600;color:#e5b524}
 <script>
 const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 const API_BASE = localStorage.getItem('invoiceRunnerAPI') || (isLocal ? 'http://localhost:8420' : 'https://bryans-macbook-pro-1.tail1ed408.ts.net');
+
+function gmailAppLink(url) {
+  if (/Android/i.test(navigator.userAgent)) {
+    const noScheme = url.replace(/^https:\/\//, '');
+    const [hostPath, fragment] = noScheme.split('#', 2);
+    const fragmentPart = fragment ? `?_h=${encodeURIComponent(fragment)}` : '';
+    return `intent://${hostPath}${fragmentPart}#Intent;scheme=https;package=com.google.android.gm;S.browser_fallback_url=${encodeURIComponent(url)};end`;
+  }
+  return url;
+}
 let loads = [];
 let expandedCard = null;
 let polling = {};
@@ -142,7 +152,7 @@ function pollJob(i, jobId) {
         delete polling[i];
         const gmailMatch = (data.output||'').match(/Gmail URL\s*:\s*(https:\/\/[^\s]+)/);
         const msg = gmailMatch
-          ? `Draft created! <a href="${gmailMatch[1]}" target="_blank" style="color:#4caf50">Open in Gmail</a>`
+          ? `Draft created! <a href="${gmailAppLink(gmailMatch[1])}" style="color:#4caf50">Open in Gmail</a>`
           : 'Draft created!';
         cardStatuses[i] = {cls:'success', msg};
         render();
