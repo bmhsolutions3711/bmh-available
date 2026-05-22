@@ -41,7 +41,7 @@ h1{font-size:1.2rem;font-weight:600;color:#e5b524}
 </head>
 <body>
 <header>
-  <h1>Invoice Runner</h1>
+  <h1>Invoice Runner <span style="font-size:.65rem;color:#666;font-weight:400" id="version"></span></h1>
   <span class="status" id="status">Connecting...</span>
 </header>
 <div class="pull-hint">Pull to refresh</div>
@@ -53,12 +53,10 @@ h1{font-size:1.2rem;font-weight:600;color:#e5b524}
 const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 const API_BASE = localStorage.getItem('invoiceRunnerAPI') || (isLocal ? 'http://localhost:8420' : 'https://bryans-macbook-pro-1.tail1ed408.ts.net');
 
+const APP_VERSION = 'v3';
 function gmailAppLink(url) {
   if (/Android/i.test(navigator.userAgent)) {
-    const noScheme = url.replace(/^https:\/\//, '');
-    const [hostPath, fragment] = noScheme.split('#', 2);
-    const fragmentPart = fragment ? `?_h=${encodeURIComponent(fragment)}` : '';
-    return `intent://${hostPath}${fragmentPart}#Intent;scheme=https;package=com.google.android.gm;S.browser_fallback_url=${encodeURIComponent(url)};end`;
+    return `intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=com.google.android.gm;S.browser_fallback_url=${encodeURIComponent(url)};end`;
   }
   return url;
 }
@@ -177,6 +175,7 @@ document.addEventListener('touchend', e => {
   if (window.scrollY === 0 && e.changedTouches[0].clientY - startY > 80) fetchLoads();
 });
 
+document.getElementById('version').textContent = APP_VERSION;
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 fetchLoads();
 </script>
