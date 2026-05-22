@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Invoice Runner — BMH Solutions</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0a0a0a;color:#e0e0e0;min-height:100dvh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #222}
+h1{font-size:1.2rem;font-weight:600;color:#e5b524}
+.status{font-size:.7rem;padding:3px 8px;border-radius:10px;background:#1a3a1a;color:#4caf50}
+.status.offline{background:#3a1a1a;color:#f44336}
+.loads{padding:12px 16px;display:flex;flex-direction:column;gap:10px}
+.card{background:#151515;border:1px solid #222;border-radius:12px;padding:14px 16px;cursor:pointer;transition:border-color .2s}
+.card.unpaid{border-left:3px solid #e5b524}
+.card.paid{opacity:.5}
+.card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.load-num{font-size:1.1rem;font-weight:700;color:#e5b524}
+.rate{font-size:1rem;font-weight:600;color:#fff}
+.broker{font-size:.85rem;color:#aaa}
+.route{font-size:.8rem;color:#777;margin-top:2px}
+.date{font-size:.75rem;color:#555;margin-top:4px}
+.actions{overflow:hidden;max-height:0;transition:max-height .3s ease;padding:0 16px}
+.card.expanded .actions{max-height:80px;padding:10px 0 4px}
+.btn-draft{width:100%;padding:12px;border:none;border-radius:8px;background:#e5b524;color:#000;font-weight:700;font-size:.95rem;cursor:pointer}
+.btn-draft:active{background:#c49b1f}
+.btn-draft:disabled{background:#333;color:#666;cursor:not-allowed}
+.card-status{font-size:.8rem;margin-top:8px;padding:6px 10px;border-radius:6px}
+.card-status.success{background:#1a3a1a;color:#4caf50}
+.card-status.error{background:#3a1a1a;color:#f44336}
+.card-status.pending{background:#1a2a3a;color:#64b5f6}
+.empty{text-align:center;padding:60px 20px;color:#555;font-size:.9rem}
+.pull-hint{text-align:center;padding:8px;font-size:.7rem;color:#444}
+.no-email{font-size:.7rem;color:#f44;margin-top:2px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Invoice Runner</h1>
+  <span class="status" id="status">Connecting...</span>
+</header>
+<div class="pull-hint">Pull to refresh</div>
+<div class="loads" id="loads">
+  <div class="empty">Loading...</div>
+</div>
+
+<script>
+const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const API_BASE = localStorage.getItem('invoiceRunnerAPI') || (isLocal ? 'http://localhost:8420' : 'https://bryans-macbook-pro-1.tail1ed408.ts.net');
+let loads = [];
+let expandedCard = null;
+let polling = {};
+
+async function fetchLoads() {
+  try {
+    const r = await fetch(`${API_BASE}/api/loads/recent`, {cache:'no-cache'});
+    if (!r.ok) throw new Error(`${r.status}`);
+    const data = await r.json();
+    loads = data.loads || [];
+    setStatus(true);
+    render();
+  } catch(e) {
+    setStatus(false);
+    document.getElementById('loads').innerHTML = `<div class="empty">Can't reach Mac Pro<br><small>${e.message}</small></div>`;
+  }
+}
+
+function setStatus(online) {
+  const el = document.getElementById('status');
+  el.textContent = online ? 'Connected' : 'Offline';
+  el.className = 'status' + (online ? '' : ' offline');
+}
+
+function render() {
+  const container = document.getElementById('loads');
+  if (!loads.length) {
+    container.innerHTML = '<div class="empty">No loads found</div>';
+    return;
+  }
+  container.innerHTML = loads.map((l, i) => `
+    <div class="card ${l.paid ? 'paid' : 'unpaid'} ${expandedCard === i ? 'expanded' : ''}" data-i="${i}" onclick="toggle(${i})">
+      <div class="card-top">
+        <span class="load-num">#${l.load_number}</span>
+        <span class="rate">${l.total_rate || '—'}</span>
+      </div>
+      <div class="broker">${l.broker_name}</div>
+      <div class="route">${l.route}</div>
+      <div class="date">${l.delivery_date}${l.paid ? ' — PAID' : ''}</div>
+      ${!l.has_invoice_email ? '<div class="no-email">No invoice email on file</div>' : ''}
+      <div class="actions">
+        <button class="btn-draft" id="btn-${i}" onclick="event.stopPropagation();draft(${i})" ${!l.has_invoice_email ? 'disabled' : ''}>
+          Create Draft
+        </button>
+      </div>
+      <div class="card-status ${getStatusClass(i)}" id="status-${i}" style="${getStatusMsg(i) ? '' : 'display:none'}">${getStatusMsg(i)}</div>
+    </div>
+  `).join('');
+}
+
+function toggle(i) {
+  expandedCard = expandedCard === i ? null : i;
+  render();
+}
+
+const cardStatuses = {};
+function getStatusClass(i) { return cardStatuses[i]?.cls || ''; }
+function getStatusMsg(i) { return cardStatuses[i]?.msg || ''; }
+
+async function draft(i) {
+  const load = loads[i];
+  const btn = document.getElementById(`btn-${i}`);
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  cardStatuses[i] = {cls:'pending', msg:'Creating draft...'};
+  render();
+
+  try {
+    const r = await fetch(`${API_BASE}/api/scripts/run/draft-email-load?row=${encodeURIComponent(load.load_number)}`, {method:'POST'});
+    if (!r.ok) throw new Error(`${r.status}`);
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+    pollJob(i, data.job_id);
+  } catch(e) {
+    cardStatuses[i] = {cls:'error', msg:`Failed: ${e.message}`};
+    render();
+  }
+}
+
+function pollJob(i, jobId) {
+  if (polling[i]) clearInterval(polling[i]);
+  polling[i] = setInterval(async () => {
+    try {
+      const r = await fetch(`${API_BASE}/api/scripts/job/${jobId}`);
+      const data = await r.json();
+      if (data.status === 'done') {
+        clearInterval(polling[i]);
+        delete polling[i];
+        const gmailMatch = (data.output||'').match(/Gmail URL\s*:\s*(https:\/\/[^\s]+)/);
+        const msg = gmailMatch
+          ? `Draft created! <a href="${gmailMatch[1]}" target="_blank" style="color:#4caf50">Open in Gmail</a>`
+          : 'Draft created!';
+        cardStatuses[i] = {cls:'success', msg};
+        render();
+      } else if (data.status === 'error') {
+        clearInterval(polling[i]);
+        delete polling[i];
+        cardStatuses[i] = {cls:'error', msg:`Error: ${data.error || 'unknown'}`};
+        render();
+      }
+    } catch(e) {
+      clearInterval(polling[i]);
+      delete polling[i];
+      cardStatuses[i] = {cls:'error', msg:`Poll failed: ${e.message}`};
+      render();
+    }
+  }, 2000);
+}
+
+let startY = 0;
+document.addEventListener('touchstart', e => { startY = e.touches[0].clientY; });
+document.addEventListener('touchend', e => {
+  if (window.scrollY === 0 && e.changedTouches[0].clientY - startY > 80) fetchLoads();
+});
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+fetchLoads();
+</script>
+</body>
+</html>
