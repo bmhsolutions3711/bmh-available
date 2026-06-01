@@ -53,6 +53,26 @@ h1{font-size:1.2rem;font-weight:600;color:#e5b524}
 const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 const API_BASE = localStorage.getItem('invoiceRunnerAPI') || (isLocal ? 'http://localhost:8420' : 'https://bryans-macbook-pro-1.tail1ed408.ts.net');
 
+// Mission Control requires a token for Tailscale-proxied requests (direct loopback
+// is exempt). Entered once via setup, stored in localStorage, never hardcoded here
+// (this is a PUBLIC page). Sent as a Bearer header on every API call.
+const MC_TOKEN = localStorage.getItem('invoiceRunnerToken') || '';
+function authHeaders(extra) {
+  const h = Object.assign({}, extra || {});
+  if (MC_TOKEN) h['Authorization'] = 'Bearer ' + MC_TOKEN;
+  return h;
+}
+function invoiceSetup() {
+  const api = prompt('Mission Control URL:', API_BASE);
+  if (api === null) return;
+  const tok = prompt('Mission Control access token:', '');
+  if (tok === null) return;
+  localStorage.setItem('invoiceRunnerAPI', api.trim().replace(/\/$/, ''));
+  localStorage.setItem('invoiceRunnerToken', tok.trim());
+  location.reload();
+}
+window.invoiceSetup = invoiceSetup;
+
 const APP_VERSION = 'v3';
 function gmailAppLink(url) {
   if (/Android/i.test(navigator.userAgent)) {
@@ -66,7 +86,7 @@ let polling = {};
 
 async function fetchLoads() {
   try {
-    const r = await fetch(`${API_BASE}/api/loads/recent`, {cache:'no-cache'});
+    const r = await fetch(`${API_BASE}/api/loads/recent`, {cache:'no-cache', headers: authHeaders()});
     if (!r.ok) throw new Error(`${r.status}`);
     const data = await r.json();
     loads = data.loads || [];
@@ -128,7 +148,7 @@ async function draft(i) {
   render();
 
   try {
-    const r = await fetch(`${API_BASE}/api/scripts/run/draft-email-load?row=${encodeURIComponent(load.load_number)}`, {method:'POST'});
+    const r = await fetch(`${API_BASE}/api/scripts/run/draft-email-load?row=${encodeURIComponent(load.load_number)}`, {method:'POST', headers: authHeaders()});
     if (!r.ok) throw new Error(`${r.status}`);
     const data = await r.json();
     if (data.error) throw new Error(data.error);
@@ -143,7 +163,7 @@ function pollJob(i, jobId) {
   if (polling[i]) clearInterval(polling[i]);
   polling[i] = setInterval(async () => {
     try {
-      const r = await fetch(`${API_BASE}/api/scripts/job/${jobId}`);
+      const r = await fetch(`${API_BASE}/api/scripts/job/${jobId}`, {headers: authHeaders()});
       const data = await r.json();
       if (data.status === 'done') {
         clearInterval(polling[i]);
