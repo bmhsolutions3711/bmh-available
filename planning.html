@@ -342,9 +342,10 @@
 // ═══════════════════════════════════════════════════
 const LOAD_DATES = {"2026-01-06": {"pickup": 1, "delivery": 0}, "2026-01-07": {"pickup": 0, "delivery": 1}, "2026-01-09": {"pickup": 1, "delivery": 0}, "2026-01-12": {"pickup": 1, "delivery": 1}, "2026-01-14": {"pickup": 0, "delivery": 1}, "2026-01-15": {"pickup": 1, "delivery": 0}, "2026-01-16": {"pickup": 1, "delivery": 1}, "2026-01-19": {"pickup": 0, "delivery": 1}, "2026-01-20": {"pickup": 1, "delivery": 0}, "2026-01-22": {"pickup": 1, "delivery": 1}, "2026-01-23": {"pickup": 1, "delivery": 1}, "2026-01-26": {"pickup": 1, "delivery": 2}, "2026-01-28": {"pickup": 1, "delivery": 0}, "2026-01-29": {"pickup": 1, "delivery": 1}, "2026-02-02": {"pickup": 0, "delivery": 2}, "2026-01-30": {"pickup": 1, "delivery": 0}, "2026-02-04": {"pickup": 1, "delivery": 0}, "2026-02-05": {"pickup": 0, "delivery": 2}, "2026-02-03": {"pickup": 1, "delivery": 0}, "2026-02-11": {"pickup": 1, "delivery": 0}, "2026-02-12": {"pickup": 1, "delivery": 1}, "2026-02-13": {"pickup": 1, "delivery": 1}, "2026-02-16": {"pickup": 1, "delivery": 1}, "2026-02-17": {"pickup": 1, "delivery": 2}, "2026-02-19": {"pickup": 1, "delivery": 0}, "2026-02-23": {"pickup": 0, "delivery": 1}, "2026-02-24": {"pickup": 1, "delivery": 0}, "2026-02-25": {"pickup": 0, "delivery": 1}, "2026-02-26": {"pickup": 1, "delivery": 0}, "2026-02-27": {"pickup": 1, "delivery": 1}, "2026-03-02": {"pickup": 0, "delivery": 1}, "2026-03-03": {"pickup": 1, "delivery": 0}, "2026-03-05": {"pickup": 0, "delivery": 1}, "2026-03-09": {"pickup": 1, "delivery": 0}, "2026-03-10": {"pickup": 1, "delivery": 1}, "2026-03-12": {"pickup": 1, "delivery": 1}, "2026-03-14": {"pickup": 0, "delivery": 1}, "2026-03-16": {"pickup": 1, "delivery": 0}, "2026-03-17": {"pickup": 0, "delivery": 1}, "2026-03-19": {"pickup": 1, "delivery": 1}, "2026-03-24": {"pickup": 1, "delivery": 0}, "2026-03-26": {"pickup": 1, "delivery": 1}, "2026-03-27": {"pickup": 1, "delivery": 1}, "2026-03-30": {"pickup": 0, "delivery": 1}, "2026-04-02": {"pickup": 1, "delivery": 0}, "2026-04-03": {"pickup": 0, "delivery": 1}, "2026-04-07": {"pickup": 1, "delivery": 1}, "2026-04-08": {"pickup": 1, "delivery": 0}};
 
-// ── JSONBin cloud sync (rendered by Jinja2, must stay outside raw block) ────
-const BIN_ID  = '69af7d2043b1c97be9c74547';
-const BIN_KEY = '$2a$10$fk0bJzKyptJEhlVQZD.tK.XmYhJU5oGZdl2qHllLQ0vq.sAIBW6aO';
+// ── Cloud sync RETIRED — JSONBin master key rotated/dead 2026-05-31; credential
+//    removed from this public file 2026-06-23 (A0 security remediation). No remote
+//    persistence is wired here; data is in-memory only until the page is repointed
+//    at the SQLite Planning backend. ──
 
 
 const MORNING_ITEMS = 3;
@@ -353,35 +354,17 @@ const TOTAL_ITEMS   = 7;
 const TODAY         = new Date().toISOString().slice(0, 10);
 let   activeDate    = TODAY;
 
-const BIN_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+// JSONBin endpoint removed (A0 security remediation 2026-06-23).
 
 let DB = { routine: {}, workout: {}, above: {}, roadmap: {short:[], medium:[], long:[]} };
 let saveTimer = null;
 
 async function loadFromCloud() {
-  try {
-    const r = await fetch(BIN_URL, { headers: { 'X-Master-Key': BIN_KEY } });
-    const j = await r.json();
-    if (j.record) {
-      DB.routine  = j.record.routine  || {};
-      DB.workout  = j.record.workout  || {};
-      DB.above    = j.record.above    || {};
-      DB.roadmap  = j.record.roadmap  || {short:[], medium:[], long:[]};
-    }
-  } catch(e) { console.warn('JSONBin load failed', e); }
+  // JSONBin retired (key dead 2026-05-31, removed 2026-06-23). No remote load; DB stays in-memory.
 }
 
 function saveToCloud() {
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(async () => {
-    try {
-      await fetch(BIN_URL, {
-        method: 'PUT',
-        headers: { 'X-Master-Key': BIN_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify(DB)
-      });
-    } catch(e) { console.warn('JSONBin save failed', e); }
-  }, 800);
+  // JSONBin retired (key dead 2026-05-31, removed 2026-06-23). No remote persistence wired.
 }
 
 function getRoutine(dateStr) { return DB.routine[dateStr] || []; }
