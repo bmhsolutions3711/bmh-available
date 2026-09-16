@@ -301,24 +301,26 @@
 
 
 <script type="module">
-  import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getFirestore, doc, onSnapshot, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-
-  const app = initializeApp({
-    apiKey: "AIzaSyC4G8R3BfaOaaaJI4DoVvk7WX2NTPtluJg",
-    authDomain: "bmh-tasks.firebaseapp.com",
-    projectId: "bmh-tasks",
-    storageBucket: "bmh-tasks.appspot.com",
-    messagingSenderId: "128718242960",
-    appId: "1:128718242960:web:49b3e1db1c3b76b0674415"
-  });
-  const db  = getFirestore(app);
-  const REF = doc(db, 'tasks', 'bmh');
+  // FIREBASE SYNC RETIRED (card #178 hygiene, 2026-09-16). The config block here
+  // carried a public Firebase apiKey that GitHub's secret scanner had flagged; the
+  // key was probed and is DEAD ("API key not valid"), so the sync had already
+  // stopped working — it just failed quietly behind a grey dot. Credentials of any
+  // liveness do not belong in a public page, so the block is gone rather than
+  // rotated. Tasks live in Almanac's Lists now; this page keeps its own device copy.
+  const REF = null;
 
   const TIMEFRAMES = ['weekly','monthly','quarterly','annual'];
   const TF_LABELS  = { weekly:'This Week', monthly:'This Month', quarterly:'This Quarter', annual:'This Year' };
 
-  let tasks = { quick:[], business:[], personal:[], spiritual:[], shopping:[] };
+  // The device copy IS the record now that the remote sync is retired. Saving
+  // without loading would lose every task on reload while the dot said 'saved' —
+  // a half-fix that manufactures false confidence, so both halves land together.
+  const EMPTY = { quick:[], business:[], personal:[], spiritual:[], shopping:[] };
+  let tasks = EMPTY;
+  try {
+    const raw = localStorage.getItem('bmhTasks');
+    if (raw) tasks = Object.assign({}, EMPTY, JSON.parse(raw));
+  } catch (e) { console.error('tasks: local copy unreadable, starting empty', e); }
   let saveTimer = null;
   let draggedTask = null;
   let draggedFrom = null;
@@ -331,20 +333,16 @@
 
   renderAll();
 
-  onSnapshot(REF, snap => {
-    if (snap.exists()) {
-      const d = snap.data();
-      tasks = { quick:d.quick||[], business:d.business||[], personal:d.personal||[], spiritual:d.spiritual||[], shopping:d.shopping||[] };
-    }
-    renderAll(); setSync('\u25cf synced','saved');
-  }, err => { setSync('\u25cf offline'); console.error(err); });
+  setSync('\u25cf local only', 'saved');
 
   function save() {
     setSync('saving...','saving');
     clearTimeout(saveTimer);
     saveTimer = setTimeout(async () => {
-      try { await setDoc(REF, tasks); setSync('\u25cf synced','saved'); }
-      catch(e) { setSync('\u25cf save failed'); }
+      // No remote to write to since the sync was retired; the local copy below is
+      // the record. Loud rather than a fake 'synced' tick.
+      try { localStorage.setItem('bmhTasks', JSON.stringify(tasks)); setSync('\u25cf local only','saved'); }
+      catch(e) { setSync('\u25cf save failed'); console.error('tasks: local save failed', e); }
     }, 800);
   }
 

@@ -51,7 +51,24 @@ h1{font-size:1.2rem;font-weight:600;color:#e5b524}
 
 <script>
 const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-const API_BASE = localStorage.getItem('invoiceRunnerAPI') || (isLocal ? 'http://localhost:8420' : 'https://bryans-macbook-pro-1.tail1ed408.ts.net');
+// NO BACKEND ADDRESS IS BAKED IN — this is a PUBLIC page (card #178). The old
+// fallback hardcoded the tailnet host here, which put a name from a private
+// network into public source and onto live Pages. The address is entered once
+// (invoiceSetup) or handed over as a #api=<origin> link, and lives only in this
+// device's localStorage. Unlinked = the page SAYS so; it never fetches, because
+// a relative fetch would quietly hit the github.io origin and 404 forever.
+const API_BASE = (() => {
+  const m = location.hash.match(/^#api=(.+)$/);
+  if (m) {
+    const v = decodeURIComponent(m[1]).trim().replace(/\/$/, '');
+    if (/^https?:\/\//.test(v)) {
+      localStorage.setItem('invoiceRunnerAPI', v);
+      history.replaceState(null, '', location.pathname + location.search);
+      return v;
+    }
+  }
+  return localStorage.getItem('invoiceRunnerAPI') || (isLocal ? 'http://localhost:8420' : '');
+})();
 
 // Mission Control requires a token for Tailscale-proxied requests (direct loopback
 // is exempt). Entered once via setup, stored in localStorage, never hardcoded here
@@ -63,7 +80,7 @@ function authHeaders(extra) {
   return h;
 }
 function invoiceSetup() {
-  const api = prompt('Mission Control URL:', API_BASE);
+  const api = prompt('Mission Control URL:', API_BASE || 'https://your-mac.tailxxxx.ts.net');
   if (api === null) return;
   const tok = prompt('Mission Control access token:', '');
   if (tok === null) return;
@@ -85,6 +102,13 @@ let expandedCard = null;
 let polling = {};
 
 async function fetchLoads() {
+  if (!API_BASE) {
+    setStatus(false);
+    document.getElementById('loads').innerHTML =
+      `<div class="empty">Not connected<br><small>Tap Setup and enter your Mission Control URL and token.</small></div>`;
+    console.error('invoice: no API base linked — set one via invoiceSetup() or a #api=<origin> link');
+    return;
+  }
   try {
     const r = await fetch(`${API_BASE}/api/loads/recent`, {cache:'no-cache', headers: authHeaders()});
     if (!r.ok) throw new Error(`${r.status}`);
@@ -196,6 +220,11 @@ document.addEventListener('touchend', e => {
 });
 
 document.getElementById('version').textContent = APP_VERSION;
+// An #api= link tapped while the app is ALREADY open is a same-document fragment
+// change — the boot above never re-runs, so the link would silently do nothing and
+// look like a broken link. Reload so the same boot path handles it (the pattern the
+// scanner already uses). Caught by drilling the link on a live page, not by reading.
+window.addEventListener('hashchange', () => { if (/^#api=/.test(location.hash)) location.reload(); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 fetchLoads();
 </script>
